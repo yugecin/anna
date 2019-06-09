@@ -17,121 +17,124 @@ static boolean debug_print_in, debug_print_out;
 
 public static void main(String[] args)
 {
+	int exit_code;
 	try (Log _log = Log.init()) {
-		if (!ConfigImpl.check_config_directory()) {
-			Log.error("cannot create config directory "
-			          + ConfigImpl.config_dir.getAbsolutePath());
-			_log.close();
-			System.exit(2);
-		}
-		Log.info("config dir is " + ConfigImpl.config_dir.getAbsolutePath());
+		exit_code = main();
+	}
+	System.exit(exit_code);
+}
 
-		ConfigImpl conf = ConfigImpl.load("anna", Anna.default_config);
-		if (conf == null) {
-			Log.error("no main config, exiting");
-			_log.close();
-			System.exit(1);
-		}
+private static int main()
+{
+	if (!ConfigImpl.check_config_directory()) {
+		Log.error("cannot create config directory "
+			  + ConfigImpl.config_dir.getAbsolutePath());
+		return 2;
+	}
+	Log.info("config dir is " + ConfigImpl.config_dir.getAbsolutePath());
 
-		if (conf.is_new) {
-			Log.warn("config file " + conf.conf_file.getName()
-			         + " was created, check the settings and restart, exiting");
-			_log.close();
-			System.exit(3);
-		}
+	ConfigImpl conf = ConfigImpl.load("anna", Anna.default_config);
+	if (conf == null) {
+		Log.error("no main config, exiting");
+		return 1;
+	}
 
-		debug_print_in = conf.getBool("debug.print.incoming");
-		debug_print_out = conf.getBool("debug.print.outgoing");
+	if (conf.is_new) {
+		Log.warn("config file " + conf.conf_file.getName()
+			 + " was created, check the settings and restart, exiting");
+		return 3;
+	}
 
-		String host = conf.getStr("server.host");
-		int port = conf.getInt("server.port");
-		if (host == null || port == 0) {
-			Log.warn("update 'server.host' and 'server.port' in the config");
-			_log.close();
-			System.exit(4);
-		}
+	debug_print_in = conf.getBool("debug.print.incoming");
+	debug_print_out = conf.getBool("debug.print.outgoing");
 
-		Anna anna = new Anna(conf);
+	String host = conf.getStr("server.host");
+	int port = conf.getInt("server.port");
+	if (host == null || port == 0) {
+		Log.warn("update 'server.host' and 'server.port' in the config");
+		return 4;
+	}
 
-		boolean disconnect_after_succesful_connection = true;
-		for (;;) {
-			try (Socket socket = new Socket(host, port)) {
-				disconnect_after_succesful_connection = true;
-				CapturedWriter out;
-				InputStreamReader in;
+	Anna anna = new Anna(conf);
 
-				out = new CapturedWriter(socket.getOutputStream());
-				in = new InputStreamReader(socket.getInputStream(), UTF_8);
+	boolean disconnect_after_succesful_connection = true;
+	for (;;) {
+		try (Socket socket = new Socket(host, port)) {
+			disconnect_after_succesful_connection = true;
+			CapturedWriter out;
+			InputStreamReader in;
 
-				out.print("NICK " + conf.getStr("bot.nick") + "\r\n");
-				out.print("USER " + conf.getStr("bot.user") + " 0 0 :"
-				          + conf.getStr("bot.userinfo") + "\r\n");
+			out = new CapturedWriter(socket.getOutputStream());
+			in = new InputStreamReader(socket.getInputStream(), UTF_8);
 
-				char[] buf = new char[512];
-				int pos = 0;
-				boolean cr = false;
-				for (;;) {
-					int c = in.read();
-					if (c == -1) {
-						Log.warn("end of stream is reached");
-						break;
-					}
-					if (c == '\r') {
-						cr = true;
-						continue;
-					} else if (cr) {
-						cr = false;
-						if (c == '\n') {
-							if (debug_print_in) {
-								String msg;
-								msg = new String(buf, 0, pos);
-								System.out.println("<- " + msg);
-							}
-							if (startsWith(buf, pos, "PING")) {
-								buf[1] = 'O';
-								buf[pos++] = '\r';
-								buf[pos++] = '\n';
-								out.print(buf, 0, pos);
-								pos = 0;
-								continue;
-							}
+			out.print("NICK " + conf.getStr("bot.nick") + "\r\n");
+			out.print("USER " + conf.getStr("bot.user") + " 0 0 :"
+			          + conf.getStr("bot.userinfo") + "\r\n");
+
+			char[] buf = new char[512];
+			int pos = 0;
+			boolean cr = false;
+			for (;;) {
+				int c = in.read();
+				if (c == -1) {
+					Log.warn("end of stream is reached");
+					break;
+				}
+				if (c == '\r') {
+					cr = true;
+					continue;
+				} else if (cr) {
+					cr = false;
+					if (c == '\n') {
+						if (debug_print_in) {
+							String msg;
+							msg = new String(buf, 0, pos);
+							System.out.println("<- " + msg);
+						}
+						if (startsWith(buf, pos, "PING")) {
+							buf[1] = 'O';
+							buf[pos++] = '\r';
+							buf[pos++] = '\n';
+							out.print(buf, 0, pos);
 							pos = 0;
 							continue;
 						}
-						buf[pos++] = '\r';
+						pos = 0;
+						continue;
 					}
-					buf[pos++] = (char) c;
+					buf[pos++] = '\r';
 				}
-			} catch (UnknownHostException e) {
-				Log.error("unknown host, check the config", e);
-				_log.close();
-				System.exit(5);
-			} catch (Exception e) {
-				Log.error("socket exception", e);
+				buf[pos++] = (char) c;
 			}
+		} catch (UnknownHostException e) {
+			Log.error("unknown host, check the config", e);
+			return 5;
+		} catch (Exception e) {
+			Log.error("socket exception", e);
+		}
 
-			if (restart) {
-				restart = false;
-				continue;
-			}
+		if (restart) {
+			restart = false;
+			continue;
+		}
 
-			if (shutdown) {
-				break;
-			}
+		if (shutdown) {
+			break;
+		}
 
-			int retry_timeout = conf.getInt("connection.retrytimeoutseconds", 1, 3600);
+		int retry_timeout = conf.getInt("connection.retrytimeoutseconds", 1, 3600);
 
-			if (disconnect_after_succesful_connection) {
-				disconnect_after_succesful_connection = false;
-				Log.warn("disconnected, reconnecting every " + retry_timeout + "s");
-			}
+		if (disconnect_after_succesful_connection) {
+			disconnect_after_succesful_connection = false;
+			Log.warn("disconnected, reconnecting every " + retry_timeout + "s");
+		}
 
-			try {
-				Thread.sleep(retry_timeout * 1000L);
-			} catch (InterruptedException e) {
-			}
+		try {
+			Thread.sleep(retry_timeout * 1000L);
+		} catch (InterruptedException e) {
 		}
 	}
+	return 0;
 }
 }
 
