@@ -23,4 +23,14 @@ public static boolean startsWith(char[] buf, int buflen, String startsWith)
 	}
 	return true;
 }
+
+public static int indexOf(char[] buf, int pos, int buflen, char needle)
+{
+	for (int i = pos; i < buflen; i++) {
+		if (buf[i] == needle) {
+			return i;
+		}
+	}
+	return -1;
+}
 }

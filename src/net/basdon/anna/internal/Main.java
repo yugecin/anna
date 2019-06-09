@@ -6,6 +6,9 @@ import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import net.basdon.anna.api.Message;
+
+import static java.lang.System.exit;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static net.basdon.anna.api.Util.*;
 
@@ -15,20 +18,22 @@ private static boolean restart, shutdown;
 
 static boolean debug_print_in, debug_print_out;
 
-public static void main(String[] args)
+public static
+void main(String[] args)
 {
 	int exit_code;
 	try (Log _log = Log.init()) {
 		exit_code = main();
 	}
-	System.exit(exit_code);
+	exit(exit_code);
 }
 
-private static int main()
+private static
+int main()
 {
 	if (!ConfigImpl.check_config_directory()) {
 		Log.error("cannot create config directory "
-			  + ConfigImpl.config_dir.getAbsolutePath());
+		          + ConfigImpl.config_dir.getAbsolutePath());
 		return 2;
 	}
 	Log.info("config dir is " + ConfigImpl.config_dir.getAbsolutePath());
@@ -41,7 +46,7 @@ private static int main()
 
 	if (conf.is_new) {
 		Log.warn("config file " + conf.conf_file.getName()
-			 + " was created, check the settings and restart, exiting");
+		         + " was created, check the settings and restart, exiting");
 		return 3;
 	}
 
@@ -71,41 +76,7 @@ private static int main()
 			out.print("USER " + conf.getStr("bot.user") + " 0 0 :"
 			          + conf.getStr("bot.userinfo") + "\r\n");
 
-			char[] buf = new char[512];
-			int pos = 0;
-			boolean cr = false;
-			for (;;) {
-				int c = in.read();
-				if (c == -1) {
-					Log.warn("end of stream is reached");
-					break;
-				}
-				if (c == '\r') {
-					cr = true;
-					continue;
-				} else if (cr) {
-					cr = false;
-					if (c == '\n') {
-						if (debug_print_in) {
-							String msg;
-							msg = new String(buf, 0, pos);
-							System.out.println("<- " + msg);
-						}
-						if (startsWith(buf, pos, "PING")) {
-							buf[1] = 'O';
-							buf[pos++] = '\r';
-							buf[pos++] = '\n';
-							out.print(buf, 0, pos);
-							pos = 0;
-							continue;
-						}
-						pos = 0;
-						continue;
-					}
-					buf[pos++] = '\r';
-				}
-				buf[pos++] = (char) c;
-			}
+			pumpmessages(in, out);
 		} catch (UnknownHostException e) {
 			Log.error("unknown host, check the config", e);
 			return 5;
@@ -136,6 +107,69 @@ private static int main()
 	}
 	return 0;
 }
+
+private static
+void pumpmessages(InputStreamReader in, CapturedWriter out)
+throws IOException
+{
+	char[] buf = new char[512];
+	int pos = 0;
+	boolean cr = false;
+	for (;;) {
+		int c = in.read();
+		if (c == -1) {
+			Log.warn("end of stream is reached");
+			break;
+		}
+		if (c == '\r') {
+			cr = true;
+			continue;
+		} else if (cr) {
+			cr = false;
+			if (c == '\n') {
+				if (debug_print_in) {
+					String msg;
+					msg = new String(buf, 0, pos);
+					System.out.println("<- " + msg);
+				}
+
+				if (startsWith(buf, pos, "PING")) {
+					buf[1] = 'O';
+					buf[pos++] = '\r';
+					buf[pos++] = '\n';
+					out.print(buf, 0, pos);
+					pos = 0;
+					continue;
+				}
+
+				if (pos == 0) {
+					Log.warn("empty message received");
+					continue;
+				}
+
+				Message msg = Message.parse(buf, pos);
+				if (msg != null) {
+					/*
+					System.out.println("Message:");
+					System.out.println("  prefix " + new String(msg.prefix));
+					System.out.println("  command " + new String(msg.cmd));
+					System.out.println("  commandnum " + msg.cmdnum);
+					System.out.println("  params " + msg.paramc);
+					for (int i = 0; i < msg.paramc; i++) {
+						char[] v = msg.paramv[i];
+						System.out.println("    " + new String(v));
+					}
+					*/
+				}
+
+				pos = 0;
+				continue;
+			}
+			buf[pos++] = '\r';
+		}
+		buf[pos++] = (char) c;
+	}
+}
 }
 
 class CapturedWriter
@@ -147,7 +181,8 @@ CapturedWriter(OutputStream out)
 	this.out = new BufferedWriter(new OutputStreamWriter(out, UTF_8));
 }
 
-void print(String msg) throws IOException
+void print(String msg)
+throws IOException
 {
 	if (Main.debug_print_out) {
 		// substring to remove CRLF
@@ -157,7 +192,8 @@ void print(String msg) throws IOException
 	out.flush();
 }
 
-void print(char[] buf, int offset, int len) throws IOException
+void print(char[] buf, int offset, int len)
+throws IOException
 {
 	if (Main.debug_print_out) {
 		// -2 to remove CRLF
