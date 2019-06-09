@@ -137,30 +137,30 @@ public static void main(String[] args)
 
 class CapturedWriter
 {
-	private final Writer out;
+private final Writer out;
 
-	CapturedWriter(OutputStream out)
-	{
-		this.out = new BufferedWriter(new OutputStreamWriter(out, UTF_8));
-	}
+CapturedWriter(OutputStream out)
+{
+	this.out = new BufferedWriter(new OutputStreamWriter(out, UTF_8));
+}
 
-	void print(String msg) throws IOException
-	{
-		if (Main.debug_print_out) {
-			// substring to remove CRLF
-			System.out.println("-> " + msg.substring(0, msg.length() - 2));
-		}
-		out.write(msg, 0, msg.length());
-		out.flush();
+void print(String msg) throws IOException
+{
+	if (Main.debug_print_out) {
+		// substring to remove CRLF
+		System.out.println("-> " + msg.substring(0, msg.length() - 2));
 	}
+	out.write(msg, 0, msg.length());
+	out.flush();
+}
 
-	void print(char[] buf, int offset, int len) throws IOException
-	{
-		if (Main.debug_print_out) {
-			// -2 to remove CRLF
-			System.out.println("-> " + new String(buf, offset, len - 2));
-		}
-		out.write(buf, offset, len);
-		out.flush();
+void print(char[] buf, int offset, int len) throws IOException
+{
+	if (Main.debug_print_out) {
+		// -2 to remove CRLF
+		System.out.println("-> " + new String(buf, offset, len - 2));
 	}
+	out.write(buf, offset, len);
+	out.flush();
+}
 }
