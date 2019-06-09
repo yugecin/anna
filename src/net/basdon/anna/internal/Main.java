@@ -10,6 +10,7 @@ import net.basdon.anna.api.Message;
 
 import static java.lang.System.exit;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static net.basdon.anna.api.Constants.*;
 import static net.basdon.anna.api.Util.*;
 
 public class Main
@@ -69,20 +70,21 @@ int main()
 			CapturedWriter out;
 			InputStreamReader in;
 
-			out = new CapturedWriter(socket.getOutputStream());
+			anna.writer = out = new CapturedWriter(socket.getOutputStream());
 			in = new InputStreamReader(socket.getInputStream(), UTF_8);
 
 			out.print("NICK " + conf.getStr("bot.nick") + "\r\n");
 			out.print("USER " + conf.getStr("bot.user") + " 0 0 :"
 			          + conf.getStr("bot.userinfo") + "\r\n");
 
-			pumpmessages(in, out);
+			pumpmessages(in, out, anna);
 		} catch (UnknownHostException e) {
 			Log.error("unknown host, check the config", e);
 			return 5;
 		} catch (Exception e) {
 			Log.error("socket exception", e);
 		}
+		anna.writer = null;
 
 		if (restart) {
 			restart = false;
@@ -109,12 +111,13 @@ int main()
 }
 
 private static
-void pumpmessages(InputStreamReader in, CapturedWriter out)
+void pumpmessages(InputStreamReader in, CapturedWriter out, Anna anna)
 throws IOException
 {
 	char[] buf = new char[512];
 	int pos = 0;
 	boolean cr = false;
+	boolean waiting_for_mode = true;
 	for (;;) {
 		int c = in.read();
 		if (c == -1) {
@@ -160,6 +163,18 @@ throws IOException
 						System.out.println("    " + new String(v));
 					}
 					*/
+					if (waiting_for_mode) {
+						if (strcmp(msg.cmd, CMD_MODE)) {
+							waiting_for_mode = false;
+							anna.established();
+						}
+					} else {
+						try {
+							anna.dispatch_message(msg);
+						} catch (Throwable t) {
+							Log.error("something broke", t);
+						}
+					}
 				}
 
 				pos = 0;
@@ -172,7 +187,7 @@ throws IOException
 }
 }
 
-class CapturedWriter
+class CapturedWriter implements Anna.Output
 {
 private final Writer out;
 
@@ -181,6 +196,8 @@ CapturedWriter(OutputStream out)
 	this.out = new BufferedWriter(new OutputStreamWriter(out, UTF_8));
 }
 
+@Override
+public
 void print(String msg)
 throws IOException
 {
@@ -192,6 +209,8 @@ throws IOException
 	out.flush();
 }
 
+@Override
+public
 void print(char[] buf, int offset, int len)
 throws IOException
 {

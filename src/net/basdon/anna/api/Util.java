@@ -7,7 +7,8 @@ public class Util
 /**
  * check if buffer starts with a given string, similar to {@link String#startsWith(String)}
  */
-public static boolean startsWith(char[] buf, int buflen, String startsWith)
+public static
+boolean startsWith(char[] buf, int buflen, String startsWith)
 {
 	char[] chars = startsWith.toCharArray();
 	if (buflen < chars.length) {
@@ -24,7 +25,8 @@ public static boolean startsWith(char[] buf, int buflen, String startsWith)
 	return true;
 }
 
-public static int indexOf(char[] buf, int pos, int buflen, char needle)
+public static
+int indexOf(char[] buf, int pos, int buflen, char needle)
 {
 	for (int i = pos; i < buflen; i++) {
 		if (buf[i] == needle) {
@@ -32,5 +34,27 @@ public static int indexOf(char[] buf, int pos, int buflen, char needle)
 		}
 	}
 	return -1;
+}
+
+public static
+boolean strcmp(@Nullable char[] a, @Nullable char...b)
+{
+	if (a == null || b == null || a.length != b.length) {
+		return false;
+	}
+	for (int i = 0; i < a.length; i++) {
+		if (a[i] != b[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+public static
+void set(char[] buf, int offset, char...data)
+{
+	for (int i = 0; i < data.length; i++) {
+		buf[offset + i] = data[i];
+	}
 }
 }

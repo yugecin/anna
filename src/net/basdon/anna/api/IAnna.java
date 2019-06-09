@@ -16,4 +16,7 @@ public interface IAnna
  *         the file.
  */
 Config load_mod_conf(IMod requester, Properties defaults);
+boolean is_owner(@Nullable User user);
+void send_raw(String msg);
+void send_raw(char[] buf, int offset, int len);
 }

@@ -13,6 +13,7 @@ import static net.basdon.anna.api.Util.*;
  */
 public class Message
 {
+@Nullable
 public char[] prefix;
 /**
  * command number or {@code 0} if it was not a three digit number
