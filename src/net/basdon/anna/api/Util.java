@@ -36,6 +36,23 @@ int indexOf(char[] buf, int pos, int buflen, char needle)
 	return -1;
 }
 
+/**
+ * @param to exclusive
+ */
+public static
+boolean strcmp(char[] a, int offset, int to, char...b)
+{
+	if (to - offset != b.length) {
+		return false;
+	}
+	for (int i = 0; i < b.length; i++, offset++) {
+		if (a[offset] != b[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
 public static
 boolean strcmp(@Nullable char[] a, @Nullable char...b)
 {

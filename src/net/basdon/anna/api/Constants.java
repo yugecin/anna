@@ -23,6 +23,7 @@ public static final char[]
 	CMD_PRIVMSG = {'P', 'R', 'I', 'V', 'M', 'S', 'G' };
 
 public static final int
+	RPL_ISUPPORT = 005, // https://tools.ietf.org/html/draft-brocklesby-irc-isupport-03
 	RPL_ENDOFMOTD = 376,
 	ERR_NOMOTD = 422;
 }

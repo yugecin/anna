@@ -21,6 +21,13 @@ class Anna implements IAnna
 {
 static final Properties default_config;
 
+/**
+ * {@link https://tools.ietf.org/html/draft-brocklesby-irc-isupport-03#section-3.14}
+ */
+static final char[]
+	PREFIXES_DEFAULT = { '@', '+' },
+	MODES_DEFAULT = { 'o', 'v' };
+
 static
 {
 	default_config = new Properties();
@@ -45,6 +52,15 @@ static
 private char command_prefix;
 private User[] owners;
 private User me;
+
+/**
+ * {@link https://tools.ietf.org/html/draft-brocklesby-irc-isupport-03#section-3.14}
+ */
+char[] prefixes, modes;
+/**
+ * {@link https://tools.ietf.org/html/draft-brocklesby-irc-isupport-03#section-3.3}
+ */
+char[] chanmodes_a, chanmodes_b, chanmodes_c, chanmodes_d;
 
 final Config conf;
 
@@ -97,6 +113,44 @@ public
 Config load_mod_conf(IMod requester, Properties defaults)
 {
 	return ConfigImpl.load(requester.getName(), defaults);
+}
+
+void connecting()
+{
+	this.prefixes = PREFIXES_DEFAULT;
+	this.modes = MODES_DEFAULT;
+}
+
+/**
+ * {@link https://tools.ietf.org/html/draft-brocklesby-irc-isupport-03}
+ */
+void isupport(int paramc, char[][] paramv)
+{
+	while (paramc-- > 0) {
+		char[] p = paramv[paramc];
+		int eq = indexOf(p, 0, p.length, '=');
+		if (eq == -1) {
+			continue;
+		}
+
+		if (strcmp(p, 0, eq, 'P','R','E','F','I','X')) {
+			int par = indexOf(p, eq, p.length, ')');
+			if (par != -1 && p[eq + 1] == '(') {
+				int modestart = eq + 2;
+				int prefixstart = par + 1;
+				int modecount = par - eq - 2;
+				int prefixcount = p.length - par - 1;
+				if (modecount == prefixcount) {
+					this.modes = new char[modecount];
+					this.prefixes = new char[modecount];
+					for (int i = 0; i < modecount; i++) {
+						this.modes[i] = p[modestart + i];
+						this.prefixes[i] = p[prefixstart + i];
+					}
+				}
+			}
+		}
+	}
 }
 
 void connected(Output writer)

@@ -65,6 +65,7 @@ int main()
 
 	boolean disconnect_after_succesful_connection = true;
 	for (;;) {
+		anna.connecting();
 		try (Socket socket = new Socket(host, port)) {
 			disconnect_after_succesful_connection = true;
 			CapturedWriter out;
@@ -168,11 +169,21 @@ throws IOException
 					}
 					*/
 					if (waiting_for_motd) {
-						if (msg.cmdnum == ERR_NOMOTD ||
-							msg.cmdnum == RPL_ENDOFMOTD)
-						{
+						switch (msg.cmdnum) {
+						case RPL_ISUPPORT:
+							int count = msg.paramc;
+							if (msg.trailing_param) {
+								count--;
+							}
+							if (count > 0) {
+								anna.isupport(count, msg.paramv);
+							}
+							break;
+						case ERR_NOMOTD:
+						case RPL_ENDOFMOTD:
 							waiting_for_motd = false;
 							anna.connected(out);
+							break;
 						}
 					} else {
 						try {

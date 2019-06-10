@@ -69,7 +69,7 @@ static ConfigImpl load(String name, Properties defaults)
 
 final File conf_file;
 
-private ConfigImpl(File conf_file, Properties props, boolean is_new)
+ConfigImpl(File conf_file, Properties props, boolean is_new)
 {
 	super(props, is_new);
 	this.conf_file = conf_file;
