@@ -86,7 +86,7 @@ int main()
 		} catch (Exception e) {
 			Log.error("socket exception", e);
 		}
-		anna.writer = null;
+		anna.disconnected();
 
 		if (restart) {
 			restart = false;
@@ -94,6 +94,7 @@ int main()
 		}
 
 		if (shutdown) {
+			Log.info("shutdown requested");
 			break;
 		}
 
@@ -168,7 +169,7 @@ throws IOException
 					if (waiting_for_mode) {
 						if (strcmp(msg.cmd, CMD_MODE)) {
 							waiting_for_mode = false;
-							anna.established();
+							anna.connected(out);
 						}
 					} else {
 						try {
@@ -215,12 +216,8 @@ public
 void print(String msg)
 throws IOException
 {
-	if (Main.debug_print_out) {
-		// substring to remove CRLF
-		System.out.println("-> " + msg.substring(0, msg.length() - 2));
-	}
-	out.write(msg, 0, msg.length());
-	out.flush();
+	char[] chars = msg.toCharArray();
+	this.print(chars, 0, chars.length);
 }
 
 @Override

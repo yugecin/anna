@@ -44,6 +44,7 @@ static
 
 private char command_prefix;
 private User[] owners;
+private User me;
 
 final Config conf;
 
@@ -84,6 +85,11 @@ Anna(Config conf)
 	} else {
 		this.owners = User.EMPTY_ARRAY;
 	}
+
+	me = new User();
+	me.nick = conf.getStr("bot.nick").toCharArray();
+	me.name = conf.getStr("bot.user").toCharArray();
+	me.host = new char[] { '*' };
 }
 
 @Override
@@ -93,15 +99,18 @@ Config load_mod_conf(IMod requester, Properties defaults)
 	return ConfigImpl.load(requester.getName(), defaults);
 }
 
-/**
- * when connected with a server
- */
-void established()
+void connected(Output writer)
 {
+	this.writer = writer;
 	String chan = this.conf.getStr("debug.channel");
 	if (chan != null && chan.length() > 0 && chan.charAt(0) == '#') {
 		this.send_raw("JOIN " + chan);
 	}
+}
+
+void disconnected()
+{
+	this.writer = null;
 }
 
 void dispatch_message(Message msg)
@@ -115,6 +124,15 @@ void dispatch_message(Message msg)
 			this.handle_command(user, target, is_channel_message, message);
 		}
 		this.handle_message(user, target, is_channel_message, message);
+		return;
+	}
+
+	if (strcmp(msg.cmd, CMD_MODE) && msg.prefix != null) {
+	}
+
+	if (strcmp(msg.cmd, CMD_TOPIC) && msg.prefix != null && msg.paramc == 2) {
+		User user = User.parse(msg.prefix, 1, msg.prefix.length);
+		handle_topic(user, msg.paramv[0], msg.paramv[1]);
 	}
 }
 
@@ -140,11 +158,34 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 		arraycopy(message, space, params, 0, len);
 	}
 
+	if (strcmp(cmd, 'r','a','w') && params != null && is_owner(user)) {
+		send_raw(params, 0, params.length);
+	}
+
 	if (strcmp(cmd, 's','a','y') && params != null && is_owner(user)) {
-		char[] buf = new char[8 + params.length];
-		set(buf, 0, 'P','R','I','V','M','S','G',' ');
-		arraycopy(params, 0, buf, 8, params.length);
-		send_raw(buf, 0, buf.length);
+		space = indexOf(params, 0, params.length, ' ');
+		if (space == -1 || space == params.length - 1) {
+			this.privmsg(target, "usage: say <target> <message>".toCharArray());
+		} else {
+			char[] saytarget = new char[space];
+			char[] saytext = new char[params.length - space - 1];
+			arraycopy(params, 0, saytarget, 0, space);
+			arraycopy(params, space + 1, saytext, 0, saytext.length);
+			this.privmsg(saytarget, saytext);
+		}
+	}
+
+	if (strcmp(cmd, 'a','c','t','i','o','n') && params != null && is_owner(user)) {
+		space = indexOf(params, 0, params.length, ' ');
+		if (space == -1 || space == params.length - 1) {
+			this.privmsg(target, "usage: action <target> <message>".toCharArray());
+		} else {
+			char[] actiontarget = new char[space];
+			char[] actiontext = new char[params.length - space - 1];
+			arraycopy(params, 0, actiontarget, 0, space);
+			arraycopy(params, space + 1, actiontext, 0, actiontext.length);
+			this.action(actiontarget, actiontext);
+		}
 	}
 
 	if (strcmp(cmd, 'd','i','e') && is_owner(user)) {
@@ -160,6 +201,10 @@ void handle_message(@Nullable User user, char[] target, boolean is_channel_messa
 {
 }
 
+void handle_topic(@Nullable User user, char[] channel, char[] topic)
+{
+}
+
 @Override
 public
 boolean is_owner(@Nullable User user)
@@ -170,6 +215,37 @@ boolean is_owner(@Nullable User user)
 		}
 	}
 	return false;
+}
+
+@Override
+public
+void privmsg(char[] target, char[] text)
+{
+	char[] buf = new char[8 + target.length + 2 + text.length];
+	int off = 0;
+	off = set(buf, off, "PRIVMSG ".toCharArray());
+	arraycopy(target, 0, buf, off, target.length);
+	off += target.length;
+	buf[off++] = ' ';
+	buf[off++] = ':';
+	arraycopy(text, 0, buf, off, text.length);
+	send_raw(buf, 0, buf.length);
+}
+
+@Override
+public
+void action(char[] target, char[] text)
+{
+	char[] buf = new char[8 + target.length + 10 + text.length + 1];
+	int off = 0;
+	off = set(buf, off, "PRIVMSG ".toCharArray());
+	arraycopy(target, 0, buf, off, target.length);
+	off += target.length;
+	off = set(buf, off, ' ',':',(char) 1,'A','C','T','I','O','N',' ');
+	arraycopy(text, 0, buf, off, text.length);
+	off += text.length;
+	buf[off] = 1;
+	send_raw(buf, 0, buf.length);
 }
 
 @Override
@@ -197,11 +273,11 @@ void send_raw(char[] buf, int offset, int len)
 	}
 }
 
-public class QuitException extends RuntimeException
+class QuitException extends RuntimeException
 {
 }
 
-public class RestartException extends RuntimeException
+class RestartException extends RuntimeException
 {
 }
 

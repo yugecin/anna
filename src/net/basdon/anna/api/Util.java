@@ -50,11 +50,15 @@ boolean strcmp(@Nullable char[] a, @Nullable char...b)
 	return true;
 }
 
+/**
+ * @return new offset after inserted data
+ */
 public static
-void set(char[] buf, int offset, char...data)
+int set(char[] buf, int offset, char...data)
 {
-	for (int i = 0; i < data.length; i++) {
-		buf[offset + i] = data[i];
+	for (int i = 0; i < data.length; i++, offset++) {
+		buf[offset] = data[i];
 	}
+	return offset;
 }
 }

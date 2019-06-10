@@ -16,7 +16,12 @@ public interface IAnna
  *         the file.
  */
 Config load_mod_conf(IMod requester, Properties defaults);
+/**
+ * check if given user is listed as an Anna owner in the config
+ */
 boolean is_owner(@Nullable User user);
+void privmsg(char[] target, char[] msg);
+void action(char[] target, char[] msg);
 /**
  * should not include CRLF
  */
