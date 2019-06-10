@@ -160,6 +160,7 @@ throws IOException
 					System.out.println("  prefix " + new String(msg.prefix));
 					System.out.println("  command " + new String(msg.cmd));
 					System.out.println("  commandnum " + msg.cmdnum);
+					System.out.println("  trailing " + msg.trailing_param);
 					System.out.println("  params " + msg.paramc);
 					for (int i = 0; i < msg.paramc; i++) {
 						char[] v = msg.paramv[i];

@@ -20,6 +20,10 @@ public char[] prefix;
  */
 public int cmdnum;
 public char[] cmd;
+/**
+ * {@code true} if last parameter is trailing (starts with : (but the : is stripped))
+ */
+public boolean trailing_param;
 public int paramc;
 public char[][] paramv = new char[15][];
 
@@ -40,8 +44,8 @@ Message parse(char[] buf, int buflen)
 	if (buf[0] == ':') {
 		int space_pos = indexOf(buf, 0, buflen, ' ');
 		if (space_pos != -1) {
-			msg.prefix = new char[space_pos];
-			arraycopy(buf, 0, msg.prefix, 0, space_pos);
+			msg.prefix = new char[space_pos - 1];
+			arraycopy(buf, 1, msg.prefix, 0, space_pos - 1);
 			parsepos = space_pos;
 			while (buf[parsepos] == ' ') {
 				parsepos++;
@@ -106,6 +110,11 @@ Message parse(char[] buf, int buflen)
 					         + new String(buf, 0, buflen));
 					return null;
 				}
+				parsepos++;
+				if (parsepos == buflen) {
+					break;
+				}
+				msg.trailing_param = true;
 				int len = buflen - parsepos;
 				char [] par = msg.paramv[msg.paramc++] = new char[len];
 				arraycopy(buf, parsepos, par, 0, len);

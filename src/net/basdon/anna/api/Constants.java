@@ -18,6 +18,7 @@ public static final char[]
 	CMD_MODE = {'M', 'O', 'D', 'E'},
 	CMD_JOIN = {'J', 'O', 'I', 'N'},
 	CMD_PART = {'P', 'A', 'R', 'T'},
+	CMD_QUIT = {'Q', 'U', 'I', 'T'},
 	CMD_TOPIC = {'T', 'O', 'P', 'I', 'C'},
 	CMD_PRIVMSG = {'P', 'R', 'I', 'V', 'M', 'S', 'G' };
 }

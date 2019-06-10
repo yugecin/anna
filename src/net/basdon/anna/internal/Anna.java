@@ -115,25 +115,64 @@ void disconnected()
 
 void dispatch_message(Message msg)
 {
+	User user = null;
+	if (msg.prefix != null) {
+		user = User.parse(msg.prefix, 0, msg.prefix.length);
+	}
+
+	// <- :mib!*@* PRIVMSG #anna :ttt
 	if (strcmp(msg.cmd, CMD_PRIVMSG) && msg.paramc == 2 && msg.prefix != null) {
-		User user = User.parse(msg.prefix, 1, msg.prefix.length);
 		char[] target = msg.paramv[0];
 		char[] message = msg.paramv[1];
-		boolean is_channel_message = message.length > 0 && message[0] == '#';
-		if (message[1] == this.command_prefix) {
+		boolean is_channel_message = target[0] == '#';
+		if (message[0] == this.command_prefix) {
 			this.handle_command(user, target, is_channel_message, message);
 		}
 		this.handle_message(user, target, is_channel_message, message);
 		return;
 	}
 
+	// <- :robin_be!*@* MODE #anna +tv robin_be
+	// <- :robin_be!*@* MODE #anna +v mib
+	// <- :robin_be!*@* MODE #anna +o-v mib mib
+	// <- :robin_be!*@* MODE #anna -o mib
+	// <- :robin_be!*@* MODE #anna +ov mib mib
+	// <- :robin_be!*@* MODE #anna -t
 	if (strcmp(msg.cmd, CMD_MODE) && msg.prefix != null) {
 	}
 
+	// <- :mib!*@* JOIN :#anna
+	if (strcmp(msg.cmd, CMD_JOIN) && msg.prefix != null && msg.paramc > 0) {
+		handle_join(user, msg.paramv[0]);
+	}
+
+	// <- :mib!*@* QUIT :Quit: http://www.mibbit.com ajax IRC Client
+	if (strcmp(msg.cmd, CMD_QUIT) && msg.prefix != null && msg.paramc > 0) {
+		handle_quit(user, msg.paramv[0], msg.paramv[1]);
+	}
+
+	// <- :mib!*@* PART #anna :he
+	// <- :mib!*@* PART #anna
+	if (strcmp(msg.cmd, CMD_PART) && msg.prefix != null && msg.paramc > 0) {
+		handle_part(user, msg.paramv[0], msg.paramv[1]);
+	}
+
+	// <- :robin_be!*@* TOPIC #anna :topic
 	if (strcmp(msg.cmd, CMD_TOPIC) && msg.prefix != null && msg.paramc == 2) {
-		User user = User.parse(msg.prefix, 1, msg.prefix.length);
 		handle_topic(user, msg.paramv[0], msg.paramv[1]);
 	}
+}
+
+void handle_join(@Nullable User user, char[] channel)
+{
+}
+
+void handle_quit(@Nullable User user, char[] channel, @Nullable char[] msg)
+{
+}
+
+void handle_part(@Nullable User user, char[] channel, @Nullable char[] msg)
+{
 }
 
 void handle_command(@Nullable User user, char[] target, boolean is_channel_message, char[] message)
@@ -142,13 +181,15 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 	char[] params = null;
 	int len;
 
-	int space = indexOf(message, 2, message.length, ' ');
+	// start at idx 1 to skip command prefix
+	int space = indexOf(message, 1, message.length, ' ');
 	if (space == -1) {
 		space = message.length;
 	}
 
-	cmd = new char[len = space - 2];
-	arraycopy(message, 2, cmd, 0, len);
+	// len - 1 to skip command prefix
+	cmd = new char[len = space - 1];
+	arraycopy(message, 1, cmd, 0, len);
 
 	while (space < message.length && message[space] == ' ') {
 		space++;
