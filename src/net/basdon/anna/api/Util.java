@@ -105,4 +105,27 @@ int set(char[] buf, int offset, char...data)
 	}
 	return offset;
 }
+
+/**
+ * @return idex of {@code needle} in {@code array}, or {@code -1} if not in array
+ */
+public static
+int array_idx(char[] array, char needle)
+{
+	for (int i = 0; i < array.length; i++) {
+		if (needle == array[i]) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+public static
+char[] chars(StringBuilder sb)
+{
+	int len = sb.length();
+	char[] buf = new char[len];
+	sb.getChars(0, len, buf, 0);
+	return buf;
+}
 }

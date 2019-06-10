@@ -49,6 +49,8 @@ static
 	default_config.put("owners", "robin_be!*@cyber.space");
 }
 
+private final ArrayList<Channel> joined_channels;
+
 private char command_prefix;
 private User[] owners;
 private User me;
@@ -69,6 +71,7 @@ Output writer;
 Anna(Config conf)
 {
 	this.conf = conf;
+	this.joined_channels = new ArrayList<>();
 
 	String cmdprefix = conf.getStr("commands.prefix");
 	if (cmdprefix != null && cmdprefix.length() == 1) {
@@ -117,9 +120,11 @@ Config load_mod_conf(IMod requester, Properties defaults)
 
 void connecting()
 {
+	this.joined_channels.clear();
 	this.prefixes = PREFIXES_DEFAULT;
 	this.modes = MODES_DEFAULT;
 	this.chanmodes_a = this.chanmodes_b = this.chanmodes_c = this.chanmodes_d = EMPTY_CHAR_ARR;
+	ChannelUser.maxmodes = this.modes.length;
 }
 
 /**
@@ -148,6 +153,7 @@ void isupport(int paramc, char[][] paramv)
 						this.modes[i] = p[modestart + i];
 						this.prefixes[i] = p[prefixstart + i];
 					}
+					ChannelUser.maxmodes = this.modes.length;
 				}
 			}
 		}
@@ -220,32 +226,90 @@ void dispatch_message(Message msg)
 	// <- :robin_be!*@* MODE #anna +ov mib mib
 	// <- :robin_be!*@* MODE #anna -t
 	if (strcmp(msg.cmd, CMD_MODE) && msg.prefix != null) {
+		return;
 	}
 
 	// <- :mib!*@* JOIN :#anna
 	if (strcmp(msg.cmd, CMD_JOIN) && msg.prefix != null && msg.paramc > 0) {
 		handle_join(user, msg.paramv[0]);
+		return;
 	}
 
 	// <- :mib!*@* QUIT :Quit: http://www.mibbit.com ajax IRC Client
 	if (strcmp(msg.cmd, CMD_QUIT) && msg.prefix != null && msg.paramc > 0) {
 		handle_quit(user, msg.paramv[0], msg.paramv[1]);
+		return;
 	}
 
 	// <- :mib!*@* PART #anna :he
 	// <- :mib!*@* PART #anna
 	if (strcmp(msg.cmd, CMD_PART) && msg.prefix != null && msg.paramc > 0) {
 		handle_part(user, msg.paramv[0], msg.paramv[1]);
+		return;
 	}
 
 	// <- :robin_be!*@* TOPIC #anna :topic
 	if (strcmp(msg.cmd, CMD_TOPIC) && msg.prefix != null && msg.paramc == 2) {
 		handle_topic(user, msg.paramv[0], msg.paramv[1]);
+		return;
+	}
+
+	if (msg.cmdnum == RPL_NAMREPLY  && msg.trailing_param) {
+		Channel chan = this.channel_find(msg.paramv[msg.paramc - 2]);
+		if (chan == null) {
+			Log.warn("got NAMES reply for channel that is not registered");
+			return;
+		}
+		char[] users = msg.paramv[msg.paramc - 1];
+		int[] spaces = new int[users.length / 2 + 2];
+		int spacecount = occurrences(users, 0, users.length, ' ', spaces, spaces.length);
+		if (spaces[spacecount - 1] != users.length - 1) {
+			spaces[spacecount++] = users.length;
+		}
+		int off = 0;
+		for (int i = 0; i < spacecount; i++) {
+			char[] name;
+			int nextoffset = spaces[i];
+			char mode;
+			int prefix_idx = array_idx(this.prefixes, users[off]);
+			if (prefix_idx == -1) {
+				mode = 0;
+			} else {
+				off++;
+				mode = this.modes[prefix_idx];
+			}
+			int len = nextoffset - off;
+			name = new char[len];
+			arraycopy(users, off, name, 0, len);
+			ChannelUser usr = new ChannelUser(name);
+			if (mode != 0) {
+				usr.add_mode(mode);
+			}
+			chan.userlist.add(usr);
+			off = nextoffset + 1;
+		}
+		return;
 	}
 }
 
 void handle_join(@Nullable User user, char[] channel)
 {
+	if (user == null) {
+		return;
+	}
+
+	if (strcmp(user.nick, me.nick)) {
+		this.channel_unregister(channel);
+		Channel chan = new Channel(channel);
+		this.joined_channels.add(chan);
+		// do not add own user, namelist will handle that
+		return;
+	}
+
+	Channel chan = this.channel_find(channel);
+	if (chan != null) {
+		chan.userlist.add(new ChannelUser(user.nick));
+	}
 }
 
 void handle_quit(@Nullable User user, char[] channel, @Nullable char[] msg)
@@ -254,30 +318,53 @@ void handle_quit(@Nullable User user, char[] channel, @Nullable char[] msg)
 
 void handle_part(@Nullable User user, char[] channel, @Nullable char[] msg)
 {
+	if (user == null) {
+		return;
+	}
+
+	if (strcmp(user.nick, me.nick)) {
+		this.channel_unregister(channel);
+		return;
+	}
+
+	Channel chan = this.channel_find(channel);
+	if (chan != null) {
+		int i = chan.userlist.size();
+		while (i-- > 0) {
+			ChannelUser u = chan.userlist.get(i);
+			if (strcmp(user.nick, u.name)) {
+				chan.userlist.remove(i);
+				break;
+			}
+		}
+	}
 }
 
 void handle_command(@Nullable User user, char[] target, boolean is_channel_message, char[] message)
 {
 	char[] cmd;
 	char[] params = null;
-	int len;
 
-	// start at idx 1 to skip command prefix
-	int space = indexOf(message, 1, message.length, ' ');
-	if (space == -1) {
-		space = message.length;
-	}
+	{
+		int len;
 
-	// len - 1 to skip command prefix
-	cmd = new char[len = space - 1];
-	arraycopy(message, 1, cmd, 0, len);
+		// start at idx 1 to skip command prefix
+		int space = indexOf(message, 1, message.length, ' ');
+		if (space == -1) {
+			space = message.length;
+		}
 
-	while (space < message.length && message[space] == ' ') {
-		space++;
-	}
-	if (space < message.length) {
-		params = new char[len = message.length - space];
-		arraycopy(message, space, params, 0, len);
+		// len - 1 to skip command prefix
+		cmd = new char[len = space - 1];
+		arraycopy(message, 1, cmd, 0, len);
+
+		while (space < message.length && message[space] == ' ') {
+			space++;
+		}
+		if (space < message.length) {
+			params = new char[len = message.length - space];
+			arraycopy(message, space, params, 0, len);
+		}
 	}
 
 	if (strcmp(cmd, 'r','a','w') && params != null && is_owner(user)) {
@@ -285,7 +372,7 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 	}
 
 	if (strcmp(cmd, 's','a','y') && params != null && is_owner(user)) {
-		space = indexOf(params, 0, params.length, ' ');
+		int space = indexOf(params, 0, params.length, ' ');
 		if (space == -1 || space == params.length - 1) {
 			this.privmsg(target, "usage: say <target> <message>".toCharArray());
 		} else {
@@ -298,7 +385,7 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 	}
 
 	if (strcmp(cmd, 'a','c','t','i','o','n') && params != null && is_owner(user)) {
-		space = indexOf(params, 0, params.length, ' ');
+		int space = indexOf(params, 0, params.length, ' ');
 		if (space == -1 || space == params.length - 1) {
 			this.privmsg(target, "usage: action <target> <message>".toCharArray());
 		} else {
@@ -317,6 +404,46 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 	if (strcmp(cmd, 'r','e','s','t','a','r','t') && is_owner(user)) {
 		throw new RestartException();
 	}
+
+	if (strcmp(cmd, 'c','h','a','n','n','e','l','s') && is_owner(user)) {
+		StringBuilder sb = new StringBuilder(500).append("I am in:");
+		int i = this.joined_channels.size();
+		while (i-- > 0) {
+			sb.append(' ');
+			sb.append(this.joined_channels.get(i).channel);
+		}
+		this.privmsg(target, chars(sb));
+		return;
+	}
+
+	if (strcmp(cmd, 'u','s','e','r','s') && params != null && is_owner(user)) {
+		Channel chan = this.channel_find(params);
+		if (chan == null) {
+			this.privmsg(target, "I'm not in that channel".toCharArray());
+			return;
+		}
+		StringBuilder sb = new StringBuilder(500);
+		sb.append("userlist of ").append(params).append(':');
+		int i = chan.userlist.size();
+		while (i-- > 0) {
+			sb.append(' ');
+			ChannelUser usr = chan.userlist.get(i);
+			int prefixidx = this.modes.length;
+			int modei = usr.modec;
+			while (modei-- > 0) {
+				int idx = array_idx(this.modes, usr.modev[modei]);
+				if (idx != -1 && idx < prefixidx) {
+					prefixidx = idx;
+				}
+			}
+			if (prefixidx != this.modes.length) {
+				sb.append(this.prefixes[prefixidx]);
+			}
+			sb.append(usr.name);
+		}
+		this.privmsg(target, chars(sb));
+		return;
+	}
 }
 
 void handle_message(@Nullable User user, char[] target, boolean is_channel_message, char[] message)
@@ -325,6 +452,30 @@ void handle_message(@Nullable User user, char[] target, boolean is_channel_messa
 
 void handle_topic(@Nullable User user, char[] channel, char[] topic)
 {
+}
+
+@Nullable
+Channel channel_find(char[] channel)
+{
+	int i = this.joined_channels.size();
+	while (i-- > 0) {
+		Channel chan = this.joined_channels.get(i);
+		if (strcmp(channel, chan.channel)) {
+			return chan;
+		}
+	}
+	return null;
+}
+
+void channel_unregister(char[] channel)
+{
+	int i = this.joined_channels.size();
+	while (i-- > 0) {
+		if (strcmp(channel, this.joined_channels.get(i).channel)) {
+			this.joined_channels.remove(i);
+			return;
+		}
+	}
 }
 
 @Override
