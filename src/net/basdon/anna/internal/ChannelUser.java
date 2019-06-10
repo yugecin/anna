@@ -6,13 +6,13 @@ public class ChannelUser
 {
 static int maxmodes;
 
-char[] name;
+char[] nick;
 int modec;
 char[] modev;
 
-ChannelUser(char[] name)
+ChannelUser(char[] nick)
 {
-	this.name = name;
+	this.nick = nick;
 	this.modev = new char[maxmodes];
 }
 

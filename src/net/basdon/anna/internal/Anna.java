@@ -207,6 +207,8 @@ void dispatch_message(Message msg)
 		user = User.parse(msg.prefix, 0, msg.prefix.length);
 	}
 
+	// TODO: all these msg.prefix != null checks should be user != null?
+
 	// <- :mib!*@* PRIVMSG #anna :ttt
 	if (strcmp(msg.cmd, CMD_PRIVMSG) && msg.paramc == 2 && msg.prefix != null) {
 		char[] target = msg.paramv[0];
@@ -264,6 +266,12 @@ void dispatch_message(Message msg)
 	// <- :robin_be!*@* TOPIC #anna :topic
 	if (strcmp(msg.cmd, CMD_TOPIC) && msg.prefix != null && msg.paramc == 2) {
 		handle_topic(user, msg.paramv[0], msg.paramv[1]);
+		return;
+	}
+
+	// <- :mib!*@* NICK :mib78
+	if (strcmp(msg.cmd, CMD_NICK) && msg.prefix != null && msg.paramc == 1) {
+		handle_nick(user, msg.paramv[0]);
 		return;
 	}
 
@@ -345,8 +353,27 @@ void handle_part(@Nullable User user, char[] channel, @Nullable char[] msg)
 		int i = chan.userlist.size();
 		while (i-- > 0) {
 			ChannelUser u = chan.userlist.get(i);
-			if (strcmp(user.nick, u.name)) {
+			if (strcmp(user.nick, u.nick)) {
 				chan.userlist.remove(i);
+				break;
+			}
+		}
+	}
+}
+
+void handle_nick(@Nullable User user, char[] newnick)
+{
+	if (user == null) {
+		return;
+	}
+	int i = this.joined_channels.size();
+	while (i-- > 0) {
+		Channel chan = this.joined_channels.get(i);
+		int j = chan.userlist.size();
+		while (j-- > 0) {
+			ChannelUser usr = chan.userlist.get(j);
+			if (strcmp(user.nick, usr.nick)) {
+				usr.nick = newnick;
 				break;
 			}
 		}
@@ -452,7 +479,7 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 			if (prefixidx != this.modes.length) {
 				sb.append(this.prefixes[prefixidx]);
 			}
-			sb.append(usr.name);
+			sb.append(usr.nick);
 		}
 		this.privmsg(target, chars(sb));
 		return;

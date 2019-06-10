@@ -55,7 +55,7 @@ void mode_changed(Anna anna, char[][] paramv, int paramc, int paramidx)
 				int j = this.userlist.size();
 				while (j-- > 0) {
 					ChannelUser usr = this.userlist.get(j);
-					if (strcmp(nick, usr.name)) {
+					if (strcmp(nick, usr.nick)) {
 						if (addremove == '-') {
 							usr.mode_remove(c);
 						} else {
