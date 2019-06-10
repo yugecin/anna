@@ -225,7 +225,20 @@ void dispatch_message(Message msg)
 	// <- :robin_be!*@* MODE #anna -o mib
 	// <- :robin_be!*@* MODE #anna +ov mib mib
 	// <- :robin_be!*@* MODE #anna -t
-	if (strcmp(msg.cmd, CMD_MODE) && msg.prefix != null) {
+	if (strcmp(msg.cmd, CMD_MODE) && msg.prefix != null && msg.paramc > 0) {
+		char[] target = msg.paramv[0];
+		if (target[0] == '#') {
+			Channel chan = this.channel_find(target);
+			if (chan != null) {
+				if (msg.paramc > 1) {
+					chan.mode_changed(this, msg.paramv, msg.paramc, 1);
+				} else {
+					Log.warn("MODE for channel but not enough params");
+				}
+			} else {
+				Log.warn("received MODE for unknown channel");
+			}
+		}
 		return;
 	}
 
@@ -283,7 +296,7 @@ void dispatch_message(Message msg)
 			arraycopy(users, off, name, 0, len);
 			ChannelUser usr = new ChannelUser(name);
 			if (mode != 0) {
-				usr.add_mode(mode);
+				usr.mode_add(mode);
 			}
 			chan.userlist.add(usr);
 			off = nextoffset + 1;

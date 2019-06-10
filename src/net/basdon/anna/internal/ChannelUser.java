@@ -16,7 +16,7 @@ ChannelUser(char[] name)
 	this.modev = new char[maxmodes];
 }
 
-void add_mode(char mode)
+void mode_add(char mode)
 {
 	for (int i = 0; i < this.modec; i++) {
 		if (this.modev[i] == mode) {
@@ -24,5 +24,19 @@ void add_mode(char mode)
 		}
 	}
 	this.modev[this.modec++] = mode;
+}
+
+void mode_remove(char mode)
+{
+	for (int i = 0; i < this.modec; i++) {
+		if (this.modev[i] == mode) {
+			int lastidx = this.modec - 1;
+			if (i < lastidx) {
+				this.modev[i] = this.modev[lastidx];
+			}
+			this.modec--;
+			return;
+		}
+	}
 }
 }
