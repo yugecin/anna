@@ -21,4 +21,8 @@ public static final char[]
 	CMD_QUIT = {'Q', 'U', 'I', 'T'},
 	CMD_TOPIC = {'T', 'O', 'P', 'I', 'C'},
 	CMD_PRIVMSG = {'P', 'R', 'I', 'V', 'M', 'S', 'G' };
+
+public static final int
+	RPL_ENDOFMOTD = 376,
+	ERR_NOMOTD = 422;
 }

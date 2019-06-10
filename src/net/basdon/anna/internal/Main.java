@@ -120,7 +120,7 @@ throws IOException
 	char[] buf = new char[512];
 	int pos = 0;
 	boolean cr = false;
-	boolean waiting_for_mode = true;
+	boolean waiting_for_motd = true;
 	for (;;) {
 		int c = in.read();
 		if (c == -1) {
@@ -167,9 +167,11 @@ throws IOException
 						System.out.println("    " + new String(v));
 					}
 					*/
-					if (waiting_for_mode) {
-						if (strcmp(msg.cmd, CMD_MODE)) {
-							waiting_for_mode = false;
+					if (waiting_for_motd) {
+						if (msg.cmdnum == ERR_NOMOTD ||
+							msg.cmdnum == RPL_ENDOFMOTD)
+						{
+							waiting_for_motd = false;
 							anna.connected(out);
 						}
 					} else {
