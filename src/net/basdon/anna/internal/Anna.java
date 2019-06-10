@@ -34,17 +34,18 @@ static
 	default_config.put("bot.nick", "Anna^");
 	default_config.put("bot.user", "Anna");
 	default_config.put("bot.userinfo", "github.com/yugecin/anna");
-	default_config.put("bot.messages.quit",
+	default_config.put("messages.restart", "I'll be back");
+	default_config.put("messages.quit",
 	                   "only in Sweden can a dance rap song about IRC hit #1 on the charts");
-	default_config.put("bot.messages.part",
+	default_config.put("messages.part",
 	                   "Never miss a golden opportunity to keep your mouth shut");
 	default_config.put("owners", "robin_be!*@cyber.space");
 }
 
-private final Config conf;
-
 private char command_prefix;
 private User[] owners;
+
+final Config conf;
 
 Output writer;
 
@@ -112,9 +113,8 @@ void dispatch_message(Message msg)
 		boolean is_channel_message = message.length > 0 && message[0] == '#';
 		if (message[1] == this.command_prefix) {
 			this.handle_command(user, target, is_channel_message, message);
-		} else {
-			this.handle_message(user, target, is_channel_message, message);
 		}
+		this.handle_message(user, target, is_channel_message, message);
 	}
 }
 
@@ -145,6 +145,14 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 		set(buf, 0, 'P','R','I','V','M','S','G',' ');
 		arraycopy(params, 0, buf, 8, params.length);
 		send_raw(buf, 0, buf.length);
+	}
+
+	if (strcmp(cmd, 'd','i','e') && is_owner(user)) {
+		throw new QuitException();
+	}
+
+	if (strcmp(cmd, 'r','e','s','t','a','r','t') && is_owner(user)) {
+		throw new RestartException();
 	}
 }
 
@@ -187,6 +195,14 @@ void send_raw(char[] buf, int offset, int len)
 			Log.error("could not send message from anna", e);
 		}
 	}
+}
+
+public class QuitException extends RuntimeException
+{
+}
+
+public class RestartException extends RuntimeException
+{
 }
 
 interface Output

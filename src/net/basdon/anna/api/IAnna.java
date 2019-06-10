@@ -17,6 +17,12 @@ public interface IAnna
  */
 Config load_mod_conf(IMod requester, Properties defaults);
 boolean is_owner(@Nullable User user);
+/**
+ * should not include CRLF
+ */
 void send_raw(String msg);
+/**
+ * should not include CRLF
+ */
 void send_raw(char[] buf, int offset, int len);
 }

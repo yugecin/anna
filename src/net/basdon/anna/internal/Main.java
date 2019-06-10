@@ -78,6 +78,8 @@ int main()
 			          + conf.getStr("bot.userinfo") + "\r\n");
 
 			pumpmessages(in, out, anna);
+		} catch (Anna.QuitException ignored) {
+		} catch (Anna.RestartException ignored) {
 		} catch (UnknownHostException e) {
 			Log.error("unknown host, check the config", e);
 			return 5;
@@ -171,6 +173,18 @@ throws IOException
 					} else {
 						try {
 							anna.dispatch_message(msg);
+						} catch (Anna.QuitException e) {
+							shutdown = true;
+							String m;
+							m = anna.conf.getStr("messages.quit");
+							out.print("QUIT :" + m + "\r\n");
+							throw e;
+						} catch (Anna.RestartException e) {
+							restart = true;
+							String m;
+							m = anna.conf.getStr("messages.restart");
+							out.print("QUIT :" + m + "\r\n");
+							throw e;
 						} catch (Throwable t) {
 							Log.error("something broke", t);
 						}
