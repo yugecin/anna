@@ -119,6 +119,7 @@ void connecting()
 {
 	this.prefixes = PREFIXES_DEFAULT;
 	this.modes = MODES_DEFAULT;
+	this.chanmodes_a = this.chanmodes_b = this.chanmodes_c = this.chanmodes_d = EMPTY_CHAR_ARR;
 }
 
 /**
@@ -147,6 +148,32 @@ void isupport(int paramc, char[][] paramv)
 						this.modes[i] = p[modestart + i];
 						this.prefixes[i] = p[prefixstart + i];
 					}
+				}
+			}
+		}
+
+		if (strcmp(p, 0, eq, 'C','H','A','N','M','O','D','E','S')) {
+			int[] commas = new int[3];
+			if (occurrences(p, eq, p.length, ',', commas, 3) == 3) {
+				int lastcomma = indexOf(p, commas[2] + 1, p.length, ',');
+				if (lastcomma == -1) {
+					lastcomma = p.length;
+				}
+				this.chanmodes_a = new char[commas[0] - eq - 1];
+				this.chanmodes_b = new char[commas[1] - commas[0] - 1];
+				this.chanmodes_c = new char[commas[2] - commas[1] - 1];
+				this.chanmodes_d = new char[lastcomma - commas[2] - 1];
+				for (int i = eq + 1, j = 0; i < commas[0]; i++, j++) {
+					this.chanmodes_a[j] = p[i];
+				}
+				for (int i = commas[0] + 1, j = 0; i < commas[1]; i++, j++) {
+					this.chanmodes_b[j] = p[i];
+				}
+				for (int i = commas[1] + 1, j = 0; i < commas[2]; i++, j++) {
+					this.chanmodes_c[j] = p[i];
+				}
+				for (int i = commas[2] + 1, j = 0; i < lastcomma; i++, j++) {
+					this.chanmodes_d[j] = p[i];
 				}
 			}
 		}

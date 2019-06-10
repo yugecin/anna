@@ -4,6 +4,8 @@ package net.basdon.anna.api;
 
 public class Constants
 {
+public static final char[] EMPTY_CHAR_ARR = new char[0];
+
 public static final char
 	CTRL_BOLD = 2,
 	CTRL_COLOR = 3,

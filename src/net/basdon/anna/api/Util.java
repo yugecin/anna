@@ -37,6 +37,33 @@ int indexOf(char[] buf, int pos, int buflen, char needle)
 }
 
 /**
+ * find occurrences of {@code needle} and put the offsets in {@code occurrences}
+ * @param buf buffer to search
+ * @param off start offset to search for {@code needle}
+ * @param to max offset to search to (exclusive)
+ * @param needle character to find
+ * @param occurrences array that will be filled with offsets where {@code needle} is found
+ * @param max max amount of occurrences to find, should be at least the size of
+ *        the {@code occurences} array
+ * @return amount of times the needle was find, is {@code 0}-{@code max}
+ */
+public static
+int occurrences(char[] buf, int off, int to, char needle, int[] occurrences, int max)
+{
+	int c = 0;
+	while (off < to) {
+		if (buf[off] == needle) {
+			if (max == c) {
+				break;
+			}
+			occurrences[c++] = off;
+		}
+		off++;
+	}
+	return c;
+}
+
+/**
  * @param to exclusive
  */
 public static

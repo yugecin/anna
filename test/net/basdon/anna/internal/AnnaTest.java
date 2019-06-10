@@ -83,22 +83,65 @@ void test_isupport_prefixes_invalid_imbalance_mode()
 
 @Test
 public
-void test_isupport_prefixes_extended()
+void test_default_chanmodes()
 {
 	anna.connecting();
-	anna.isupport(3, new char[][] {
-		"BLABLA=something".toCharArray(),
-		"PREFIX=(qov)~@+".toCharArray(),
-		"NOTHING=bla".toCharArray()
-	});
 
-	assertEquals(3, anna.modes.length);
-	assertEquals('q', anna.modes[0]);
-	assertEquals('o', anna.modes[1]);
-	assertEquals('v', anna.modes[2]);
-	assertEquals(3, anna.prefixes.length);
-	assertEquals('~', anna.prefixes[0]);
-	assertEquals('@', anna.prefixes[1]);
-	assertEquals('+', anna.prefixes[2]);
+	assertEquals(0, anna.chanmodes_a.length);
+	assertEquals(0, anna.chanmodes_b.length);
+	assertEquals(0, anna.chanmodes_c.length);
+	assertEquals(0, anna.chanmodes_d.length);
+}
+
+@Test
+public
+void test_chanmodes_reset_when_connecting()
+{
+	anna.chanmodes_a = new char[] { 'r' };
+	anna.chanmodes_b = new char[] { 'r' };
+	anna.chanmodes_c = new char[] { 'r' };
+	anna.chanmodes_d = new char[] { 'r' };
+
+	test_default_prefixes();
+}
+
+@Test
+public
+void test_isupport_chanmodes_simple()
+{
+	anna.connecting();
+	anna.isupport(1, new char[][] { "CHANMODES=a,bc,def,ghij".toCharArray() });
+
+	assertEquals(1, anna.chanmodes_a.length);
+	assertEquals(2, anna.chanmodes_b.length);
+	assertEquals(3, anna.chanmodes_c.length);
+	assertEquals(4, anna.chanmodes_d.length);
+	assertEquals('a', anna.chanmodes_a[0]);
+	assertEquals('b', anna.chanmodes_b[0]);
+	assertEquals('c', anna.chanmodes_b[1]);
+	assertEquals('d', anna.chanmodes_c[0]);
+	assertEquals('e', anna.chanmodes_c[1]);
+	assertEquals('f', anna.chanmodes_c[2]);
+	assertEquals('g', anna.chanmodes_d[0]);
+	assertEquals('h', anna.chanmodes_d[1]);
+	assertEquals('i', anna.chanmodes_d[2]);
+	assertEquals('j', anna.chanmodes_d[3]);
+}
+
+@Test
+public
+void test_isupport_chanmodes_extras()
+{
+	anna.connecting();
+	anna.isupport(1, new char[][] { "CHANMODES=a,b,c,d,e,f".toCharArray() });
+
+	assertEquals(1, anna.chanmodes_a.length);
+	assertEquals(1, anna.chanmodes_b.length);
+	assertEquals(1, anna.chanmodes_c.length);
+	assertEquals(1, anna.chanmodes_d.length);
+	assertEquals('a', anna.chanmodes_a[0]);
+	assertEquals('b', anna.chanmodes_b[0]);
+	assertEquals('c', anna.chanmodes_c[0]);
+	assertEquals('d', anna.chanmodes_d[0]);
 }
 }
