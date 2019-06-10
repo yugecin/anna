@@ -150,7 +150,6 @@ throws IOException
 				}
 
 				if (pos == 0) {
-					Log.warn("empty message received");
 					continue;
 				}
 
