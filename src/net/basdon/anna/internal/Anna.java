@@ -324,7 +324,7 @@ void dispatch_message(Message msg)
 			Iterator<BufferedUserModeChange> iter = this.usermode_updates.iterator();
 			while (iter.hasNext()) {
 				BufferedUserModeChange change = iter.next();
-				if (strcmp(chan, change.chan)) {
+				if (strcmp(chan, change.chan.channel)) {
 					change.dispatch(this);
 					iter.remove();
 				}
@@ -515,9 +515,8 @@ void handle_topic(@Nullable User user, char[] channel, char[] topic)
 {
 }
 
-void handle_usermodechange(ChannelUser user, char sign, char mode)
+void handle_usermodechange(Channel chan, ChannelUser user, char sign, char mode)
 {
-	System.out.println("user mode change " + new String(user.nick) + " " + sign + mode);
 }
 
 @Nullable
@@ -621,7 +620,7 @@ void send_raw(char[] buf, int offset, int len)
 static
 class BufferedUserModeChange
 {
-char[] chan;
+Channel chan;
 /**
  * amount of elements in {@code userv}, {@code signs} and {@code modes}
  */
@@ -630,7 +629,7 @@ ChannelUser[] userv;
 char[] signs;
 char[] modes;
 
-BufferedUserModeChange(char[] chan, int maxc)
+BufferedUserModeChange(Channel chan, int maxc)
 {
 	this.chan = chan;
 	this.userv = new ChannelUser[maxc];
@@ -641,7 +640,7 @@ BufferedUserModeChange(char[] chan, int maxc)
 void dispatch(Anna anna)
 {
 	while (userc-- > 0) {
-		anna.handle_usermodechange(userv[userc], signs[userc], modes[userc]);
+		anna.handle_usermodechange(chan, userv[userc], signs[userc], modes[userc]);
 	}
 }
 

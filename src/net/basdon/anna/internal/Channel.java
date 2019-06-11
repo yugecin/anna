@@ -46,7 +46,7 @@ void mode_changed(Anna anna, char[][] paramv, int paramc)
 	char[] change = paramv[1];
 	int paramidx = 2;
 	char sign = '+';
-	Anna.BufferedUserModeChange umc = new Anna.BufferedUserModeChange(chan, change.length - 1);
+	Anna.BufferedUserModeChange umc = new Anna.BufferedUserModeChange(this, change.length - 1);
 	for (int i = 0; i < change.length; i++) {
 		char c = change[i];
 		if (c == '+' || c == '-') {
