@@ -324,7 +324,7 @@ void dispatch_message(Message msg)
 			Iterator<BufferedUserModeChange> iter = this.usermode_updates.iterator();
 			while (iter.hasNext()) {
 				BufferedUserModeChange change = iter.next();
-				if (strcmp(chan, change.chan.channel)) {
+				if (strcmp(chan, change.chan.name)) {
 					change.dispatch(this);
 					iter.remove();
 				}
@@ -470,7 +470,7 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 		int i = this.joined_channels.size();
 		while (i-- > 0) {
 			sb.append(' ');
-			sb.append(this.joined_channels.get(i).channel);
+			sb.append(this.joined_channels.get(i).name);
 		}
 		this.privmsg(target, chars(sb));
 		return;
@@ -525,7 +525,7 @@ Channel channel_find(char[] channel)
 	int i = this.joined_channels.size();
 	while (i-- > 0) {
 		Channel chan = this.joined_channels.get(i);
-		if (strcmp(channel, chan.channel)) {
+		if (strcmp(channel, chan.name)) {
 			return chan;
 		}
 	}
@@ -536,7 +536,7 @@ void channel_unregister(char[] channel)
 {
 	int i = this.joined_channels.size();
 	while (i-- > 0) {
-		if (strcmp(channel, this.joined_channels.get(i).channel)) {
+		if (strcmp(channel, this.joined_channels.get(i).name)) {
 			this.joined_channels.remove(i);
 			return;
 		}

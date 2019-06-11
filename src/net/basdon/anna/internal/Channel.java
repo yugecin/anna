@@ -9,12 +9,12 @@ import static net.basdon.anna.api.Util.*;
 
 public class Channel
 {
-final char[] channel;
+final char[] name;
 final ArrayList<ChannelUser> userlist;
 
-Channel(char[] channel)
+Channel(char[] name)
 {
-	this.channel = channel;
+	this.name = name;
 	this.userlist = new ArrayList<>();
 }
 
