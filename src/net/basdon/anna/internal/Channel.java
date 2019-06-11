@@ -4,6 +4,7 @@ package net.basdon.anna.internal;
 
 import java.util.ArrayList;
 
+import static java.lang.System.arraycopy;
 import static net.basdon.anna.api.Util.*;
 
 public class Channel
@@ -34,12 +35,14 @@ ChannelUser get_or_add_user(char[] nick)
 /**
  * inform that mode has been changed
  * @param anna Anna instance
- * @param paramv params from the MODE message
+ * @param paramv params from the MODE message (channel should be at index {@code 0}, then mode, ...)
  * @param paramc length of {@code paramv}
- * @param paramidx start idx in {@code paramv} where the modestring starts, followed by the params
  */
-void mode_changed(Anna anna, char[][] paramv, int paramc, int paramidx)
+void mode_changed(Anna anna, char[][] paramv, int paramc)
 {
+	boolean need_user_update = false;
+
+	int paramidx = 1;
 	char[] change = paramv[paramidx++];
 	char addremove = '+';
 	for (int i = 0; i < change.length; i++) {
@@ -72,6 +75,7 @@ void mode_changed(Anna anna, char[][] paramv, int paramc, int paramidx)
 					if (strcmp(nick, usr.nick)) {
 						if (addremove == '-') {
 							usr.mode_remove(c);
+							need_user_update = true;
 						} else {
 							usr.mode_add(c);
 						}
@@ -83,6 +87,16 @@ void mode_changed(Anna anna, char[][] paramv, int paramc, int paramidx)
 			Log.warn("unknown mode: " + addremove + c);
 			paramidx++;
 		}
+	}
+
+	if (need_user_update) {
+		// if a user was +ov, Anna^ could only see +o upon entering the channel. if that
+		// user now lost +o, they still have +v but Anna^ does not know, thus request NAMES
+		// again
+		char[] buf = new char[6 + paramv[0].length];
+		set(buf, 0, 'N','A','M','E','S',' ');
+		arraycopy(paramv[0], 0, buf, 6, paramv[0].length);
+		anna.send_raw(buf, 0, buf.length);
 	}
 }
 }

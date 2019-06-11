@@ -233,7 +233,7 @@ void dispatch_message(Message msg)
 			Channel chan = this.channel_find(target);
 			if (chan != null) {
 				if (msg.paramc > 1) {
-					chan.mode_changed(this, msg.paramv, msg.paramc, 1);
+					chan.mode_changed(this, msg.paramv, msg.paramc);
 				} else {
 					Log.warn("MODE for channel but not enough params");
 				}
