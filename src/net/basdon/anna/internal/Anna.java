@@ -4,6 +4,8 @@ package net.basdon.anna.internal;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Properties;
 
 import net.basdon.anna.api.Config;
@@ -50,6 +52,7 @@ static
 }
 
 private final ArrayList<Channel> joined_channels;
+private final LinkedList<BufferedUserModeChange> usermode_updates;
 
 private char command_prefix;
 private User[] owners;
@@ -72,6 +75,7 @@ Anna(Config conf)
 {
 	this.conf = conf;
 	this.joined_channels = new ArrayList<>();
+	this.usermode_updates = new LinkedList<>();
 
 	String cmdprefix = conf.getStr("commands.prefix");
 	if (cmdprefix != null && cmdprefix.length() == 1) {
@@ -121,6 +125,7 @@ Config load_mod_conf(IMod requester, Properties defaults)
 void connecting()
 {
 	this.joined_channels.clear();
+	this.usermode_updates.clear();
 	this.prefixes = PREFIXES_DEFAULT;
 	this.modes = MODES_DEFAULT;
 	this.chanmodes_a = this.chanmodes_b = this.chanmodes_c = this.chanmodes_d = EMPTY_CHAR_ARR;
@@ -311,6 +316,21 @@ void dispatch_message(Message msg)
 		}
 		return;
 	}
+
+	// <- :server 366 Anna^ #anna :End of /NAMES list.
+	if (msg.cmdnum == RPL_ENDOFNAMES && msg.trailing_param) {
+		char[] chan = msg.paramv[msg.paramc - 2];
+		if (!this.usermode_updates.isEmpty()) {
+			Iterator<BufferedUserModeChange> iter = this.usermode_updates.iterator();
+			while (iter.hasNext()) {
+				BufferedUserModeChange change = iter.next();
+				if (strcmp(chan, change.chan)) {
+					change.dispatch(this);
+					iter.remove();
+				}
+			}
+		}
+	}
 }
 
 void handle_join(@Nullable User user, char[] channel)
@@ -495,6 +515,11 @@ void handle_topic(@Nullable User user, char[] channel, char[] topic)
 {
 }
 
+void handle_usermodechange(ChannelUser user, char sign, char mode)
+{
+	System.out.println("user mode change " + new String(user.nick) + " " + sign + mode);
+}
+
 @Nullable
 Channel channel_find(char[] channel)
 {
@@ -587,10 +612,51 @@ void send_raw(char[] buf, int offset, int len)
 	}
 }
 
+/**
+ * stores a batch of channel mode changes to users
+ *
+ * these may be dispatched to {@link Anna#handle_usermodechange} directly, or buffered until after
+ * receiving RPL_ENDOFNAMES for the matching channel
+ */
+static
+class BufferedUserModeChange
+{
+char[] chan;
+/**
+ * amount of elements in {@code userv}, {@code signs} and {@code modes}
+ */
+int userc;
+ChannelUser[] userv;
+char[] signs;
+char[] modes;
+
+BufferedUserModeChange(char[] chan, int maxc)
+{
+	this.chan = chan;
+	this.userv = new ChannelUser[maxc];
+	this.signs = new char[maxc];
+	this.modes = new char[maxc];
+}
+
+void dispatch(Anna anna)
+{
+	while (userc-- > 0) {
+		anna.handle_usermodechange(userv[userc], signs[userc], modes[userc]);
+	}
+}
+
+void shedule(Anna anna)
+{
+	anna.usermode_updates.add(this);
+}
+}
+
+static
 class QuitException extends RuntimeException
 {
 }
 
+static
 class RestartException extends RuntimeException
 {
 }

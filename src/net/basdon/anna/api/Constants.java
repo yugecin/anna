@@ -28,6 +28,7 @@ public static final char[]
 public static final int
 	RPL_ISUPPORT = 005, // https://tools.ietf.org/html/draft-brocklesby-irc-isupport-03
 	RPL_NAMREPLY = 353,
+	RPL_ENDOFNAMES = 366,
 	RPL_ENDOFMOTD = 376,
 	ERR_NOMOTD = 422;
 }

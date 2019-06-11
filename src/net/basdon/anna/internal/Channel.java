@@ -42,13 +42,15 @@ void mode_changed(Anna anna, char[][] paramv, int paramc)
 {
 	boolean need_user_update = false;
 
-	int paramidx = 1;
-	char[] change = paramv[paramidx++];
-	char addremove = '+';
+	char[] chan = paramv[0];
+	char[] change = paramv[1];
+	int paramidx = 2;
+	char sign = '+';
+	Anna.BufferedUserModeChange umc = new Anna.BufferedUserModeChange(chan, change.length - 1);
 	for (int i = 0; i < change.length; i++) {
 		char c = change[i];
 		if (c == '+' || c == '-') {
-			addremove = c;
+			sign = c;
 			continue;
 		}
 		if (array_idx(anna.chanmodes_a, c) != -1) {
@@ -59,7 +61,7 @@ void mode_changed(Anna anna, char[][] paramv, int paramc)
 			paramidx++;
 		} else if (array_idx(anna.chanmodes_c, c) != -1) {
 			// channel mode with param when set
-			if (addremove == '+') {
+			if (sign == '+') {
 				paramidx++;
 			}
 		} else if (array_idx(anna.chanmodes_d, c) != -1) {
@@ -73,18 +75,22 @@ void mode_changed(Anna anna, char[][] paramv, int paramc)
 				while (j-- > 0) {
 					ChannelUser usr = this.userlist.get(j);
 					if (strcmp(nick, usr.nick)) {
-						if (addremove == '-') {
+						if (sign == '-') {
 							usr.mode_remove(c);
 							need_user_update = true;
 						} else {
 							usr.mode_add(c);
 						}
+						umc.userv[umc.userc] = usr;
+						umc.signs[umc.userc] = sign;
+						umc.modes[umc.userc] = c;
+						umc.userc++;
 						break;
 					}
 				}
 			}
 		} else {
-			Log.warn("unknown mode: " + addremove + c);
+			Log.warn("unknown mode: " + sign + c);
 			paramidx++;
 		}
 	}
@@ -93,10 +99,14 @@ void mode_changed(Anna anna, char[][] paramv, int paramc)
 		// if a user was +ov, Anna^ could only see +o upon entering the channel. if that
 		// user now lost +o, they still have +v but Anna^ does not know, thus request NAMES
 		// again
-		char[] buf = new char[6 + paramv[0].length];
+		char[] buf = new char[6 + chan.length];
 		set(buf, 0, 'N','A','M','E','S',' ');
-		arraycopy(paramv[0], 0, buf, 6, paramv[0].length);
+		arraycopy(chan, 0, buf, 6, chan.length);
 		anna.send_raw(buf, 0, buf.length);
+
+		umc.shedule(anna);
+	} else {
+		umc.dispatch(anna);
 	}
 }
 }
