@@ -16,6 +16,7 @@ import static net.basdon.anna.api.Util.*;
 public class Main
 {
 private static boolean restart, shutdown;
+private static Socket socket;
 
 static boolean debug_print_in, debug_print_out;
 
@@ -62,6 +63,7 @@ int main()
 	}
 
 	Anna anna = new Anna(conf);
+	Runtime.getRuntime().addShutdownHook(new Thread(Main::shutdownhook));
 
 	boolean disconnect_after_succesful_connection = true;
 	for (;;) {
@@ -71,6 +73,7 @@ int main()
 			CapturedWriter out;
 			InputStreamReader in;
 
+			Main.socket = socket;
 			anna.writer = out = new CapturedWriter(socket.getOutputStream());
 			in = new InputStreamReader(socket.getInputStream(), UTF_8);
 
@@ -87,6 +90,7 @@ int main()
 		} catch (Exception e) {
 			Log.error("socket exception", e);
 		}
+		Main.socket = null;
 		anna.disconnected();
 
 		if (restart) {
@@ -213,7 +217,13 @@ throws IOException
 		buf[pos++] = (char) c;
 	}
 }
+
+private static
+void shutdownhook()
+{
+	close(Main.socket);
 }
+} /*Main*/
 
 class CapturedWriter implements Anna.Output
 {
@@ -245,4 +255,4 @@ throws IOException
 	out.write(buf, offset, len);
 	out.flush();
 }
-}
+} /*CapturedWriter*/

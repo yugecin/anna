@@ -128,4 +128,14 @@ char[] chars(StringBuilder sb)
 	sb.getChars(0, len, buf, 0);
 	return buf;
 }
+
+public static
+void close(@Nullable AutoCloseable ac)
+{
+	if (ac != null) {
+		try {
+			ac.close();
+		} catch (Throwable ignored) {}
+	}
+}
 }
