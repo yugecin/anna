@@ -480,6 +480,7 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 				sb.append(this.prefixes[prefixidx]);
 			}
 			sb.append(usr.nick);
+			sb.append('Z'); // to not nickalert everyone
 		}
 		this.privmsg(target, chars(sb));
 		return;
