@@ -212,10 +212,8 @@ void dispatch_message(Message msg)
 		user = User.parse(msg.prefix, 0, msg.prefix.length);
 	}
 
-	// TODO: all these msg.prefix != null checks should be user != null?
-
 	// <- :mib!*@* PRIVMSG #anna :ttt
-	if (strcmp(msg.cmd, CMD_PRIVMSG) && msg.paramc == 2 && msg.prefix != null) {
+	if (strcmp(msg.cmd, CMD_PRIVMSG) && msg.prefix != null && msg.paramc == 2) {
 		char[] target = msg.paramv[0];
 		char[] message = msg.paramv[1];
 		boolean is_channel_message = target[0] == '#';
@@ -250,32 +248,32 @@ void dispatch_message(Message msg)
 	}
 
 	// <- :mib!*@* JOIN :#anna
-	if (strcmp(msg.cmd, CMD_JOIN) && msg.prefix != null && msg.paramc > 0) {
+	if (strcmp(msg.cmd, CMD_JOIN) && user != null && msg.paramc > 0) {
 		handle_join(user, msg.paramv[0]);
 		return;
 	}
 
 	// <- :mib!*@* QUIT :Quit: http://www.mibbit.com ajax IRC Client
-	if (strcmp(msg.cmd, CMD_QUIT) && msg.prefix != null && msg.paramc > 0) {
+	if (strcmp(msg.cmd, CMD_QUIT) && user != null && msg.paramc > 0) {
 		handle_quit(user, msg.paramv[0], msg.paramv[1]);
 		return;
 	}
 
 	// <- :mib!*@* PART #anna :he
 	// <- :mib!*@* PART #anna
-	if (strcmp(msg.cmd, CMD_PART) && msg.prefix != null && msg.paramc > 0) {
+	if (strcmp(msg.cmd, CMD_PART) && user != null && msg.paramc > 0) {
 		handle_part(user, msg.paramv[0], msg.paramv[1]);
 		return;
 	}
 
 	// <- :robin_be!*@* TOPIC #anna :topic
-	if (strcmp(msg.cmd, CMD_TOPIC) && msg.prefix != null && msg.paramc == 2) {
+	if (strcmp(msg.cmd, CMD_TOPIC) && msg.paramc == 2) {
 		handle_topic(user, msg.paramv[0], msg.paramv[1]);
 		return;
 	}
 
 	// <- :mib!*@* NICK :mib78
-	if (strcmp(msg.cmd, CMD_NICK) && msg.prefix != null && msg.paramc == 1) {
+	if (strcmp(msg.cmd, CMD_NICK) && user != null && msg.paramc == 1) {
 		handle_nick(user, msg.paramv[0]);
 		return;
 	}
@@ -333,12 +331,8 @@ void dispatch_message(Message msg)
 	}
 }
 
-void handle_join(@Nullable User user, char[] channel)
+void handle_join(User user, char[] channel)
 {
-	if (user == null) {
-		return;
-	}
-
 	if (strcmp(user.nick, me.nick)) {
 		this.channel_unregister(channel);
 		Channel chan = new Channel(channel);
@@ -353,16 +347,12 @@ void handle_join(@Nullable User user, char[] channel)
 	}
 }
 
-void handle_quit(@Nullable User user, char[] channel, @Nullable char[] msg)
+void handle_quit(User user, char[] channel, @Nullable char[] msg)
 {
 }
 
-void handle_part(@Nullable User user, char[] channel, @Nullable char[] msg)
+void handle_part(User user, char[] channel, @Nullable char[] msg)
 {
-	if (user == null) {
-		return;
-	}
-
 	if (strcmp(user.nick, me.nick)) {
 		this.channel_unregister(channel);
 		return;
@@ -381,11 +371,8 @@ void handle_part(@Nullable User user, char[] channel, @Nullable char[] msg)
 	}
 }
 
-void handle_nick(@Nullable User user, char[] newnick)
+void handle_nick(User user, char[] newnick)
 {
-	if (user == null) {
-		return;
-	}
 	int i = this.joined_channels.size();
 	while (i-- > 0) {
 		Channel chan = this.joined_channels.get(i);
@@ -511,7 +498,7 @@ void handle_message(@Nullable User user, char[] target, boolean is_channel_messa
 {
 }
 
-void handle_topic(@Nullable User user, char[] channel, char[] topic)
+void handle_topic(User user, char[] channel, char[] topic)
 {
 }
 
