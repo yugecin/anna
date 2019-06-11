@@ -649,17 +649,17 @@ void shedule(Anna anna)
 {
 	anna.usermode_updates.add(this);
 }
-}
+} /*BufferedUserModeChange*/
 
 static
 class QuitException extends RuntimeException
 {
-}
+} /*QuitException*/
 
 static
 class RestartException extends RuntimeException
 {
-}
+} /*RestartException*/
 
 interface Output
 {
@@ -668,5 +668,5 @@ throws IOException;
 
 void print(char[] buf, int offset, int len)
 throws IOException;
-}
-}
+} /*Output*/
+} /*Anna*/
