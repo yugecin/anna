@@ -275,6 +275,7 @@ void dispatch_message(Message msg)
 		return;
 	}
 
+	// <- :server 353 Anna^ = #anna :Anna^ @robin_be
 	if (msg.cmdnum == RPL_NAMREPLY  && msg.trailing_param) {
 		Channel chan = this.channel_find(msg.paramv[msg.paramc - 2]);
 		if (chan == null) {
@@ -289,7 +290,7 @@ void dispatch_message(Message msg)
 		}
 		int off = 0;
 		for (int i = 0; i < spacecount; i++) {
-			char[] name;
+			char[] nick;
 			int nextoffset = spaces[i];
 			char mode;
 			int prefix_idx = array_idx(this.prefixes, users[off]);
@@ -300,13 +301,12 @@ void dispatch_message(Message msg)
 				mode = this.modes[prefix_idx];
 			}
 			int len = nextoffset - off;
-			name = new char[len];
-			arraycopy(users, off, name, 0, len);
-			ChannelUser usr = new ChannelUser(name);
+			nick = new char[len];
+			arraycopy(users, off, nick, 0, len);
+			ChannelUser usr = chan.get_or_add_user(nick);
 			if (mode != 0) {
 				usr.mode_add(mode);
 			}
-			chan.userlist.add(usr);
 			off = nextoffset + 1;
 		}
 		return;

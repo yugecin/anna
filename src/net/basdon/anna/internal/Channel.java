@@ -17,6 +17,20 @@ Channel(char[] channel)
 	this.userlist = new ArrayList<>();
 }
 
+ChannelUser get_or_add_user(char[] nick)
+{
+	int i = this.userlist.size();
+	while (i-- > 0) {
+		ChannelUser usr = this.userlist.get(i);
+		if (strcmp(nick, usr.nick)) {
+			return usr;
+		}
+	}
+	ChannelUser usr = new ChannelUser(nick);
+	this.userlist.add(usr);
+	return usr;
+}
+
 /**
  * inform that mode has been changed
  * @param anna Anna instance
