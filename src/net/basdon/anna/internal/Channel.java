@@ -71,6 +71,7 @@ void mode_changed(Anna anna, char[][] paramv, int paramc)
 				Log.warn("not enough mode params while processing mode " + c);
 			} else {
 				char[] nick = paramv[paramidx];
+				paramidx++;
 				int j = this.userlist.size();
 				while (j-- > 0) {
 					ChannelUser usr = this.userlist.get(j);
