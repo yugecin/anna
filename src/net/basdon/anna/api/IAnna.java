@@ -30,4 +30,7 @@ void send_raw(String msg);
  * should not include CRLF
  */
 void send_raw(char[] buf, int offset, int len);
+void log_error(Throwable t, String message);
+void log_error(String message);
+void log_warn(String message);
 }

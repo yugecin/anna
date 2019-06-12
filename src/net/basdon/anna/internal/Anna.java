@@ -37,6 +37,8 @@ static
 	default_config.put("server.port", "6667");
 	default_config.put("connection.retrytimeoutseconds", "2");
 	default_config.put("commands.prefix", "&");
+	default_config.put("stats.enable", "true");
+	default_config.put("stats.port", "7755");
 	default_config.put("debug.channel", "#anna");
 	default_config.put("debug.print.incoming", "false");
 	default_config.put("debug.print.outgoing", "false");
@@ -54,9 +56,11 @@ static
 private final ArrayList<Channel> joined_channels;
 private final LinkedList<BufferedUserModeChange> usermode_updates;
 
+private StatsServer stats_server;
 private char command_prefix;
 private User[] owners;
 private User me;
+private char[] debugchan;
 
 /**
  * {@link https://tools.ietf.org/html/draft-brocklesby-irc-isupport-03#section-3.14}
@@ -76,6 +80,16 @@ Anna(Config conf)
 	this.conf = conf;
 	this.joined_channels = new ArrayList<>();
 	this.usermode_updates = new LinkedList<>();
+
+	if (conf.getBool("stats.enable")) {
+		int stats_server_port = conf.getInt("stats.port");
+		if (1024 < stats_server_port && stats_server_port < 65500) {
+			this.stats_server = new StatsServer(this, stats_server_port);
+			this.stats_server.start();
+		} else {
+			Log.error("stats.port must be between 1024 and 66500");
+		}
+	}
 
 	String cmdprefix = conf.getStr("commands.prefix");
 	if (cmdprefix != null && cmdprefix.length() == 1) {
@@ -113,6 +127,13 @@ Anna(Config conf)
 	me.nick = conf.getStr("bot.nick").toCharArray();
 	me.name = conf.getStr("bot.user").toCharArray();
 	me.host = new char[] { '*' };
+
+	String debugchan = conf.getStr("debug.channel");
+	if (debugchan != null && debugchan.length() > 0 && debugchan.charAt(0) == '#') {
+		this.debugchan = debugchan.toCharArray();
+	} else {
+		this.debugchan = "#anna".toCharArray();
+	}
 }
 
 @Override
@@ -120,6 +141,12 @@ public
 Config load_mod_conf(IMod requester, Properties defaults)
 {
 	return ConfigImpl.load(requester.getName(), defaults);
+}
+
+void print_stats(Output out)
+throws IOException
+{
+	out.print("hi stats");
 }
 
 void connecting()
@@ -194,10 +221,10 @@ void isupport(int paramc, char[][] paramv)
 void connected(Output writer)
 {
 	this.writer = writer;
-	String chan = this.conf.getStr("debug.channel");
-	if (chan != null && chan.length() > 0 && chan.charAt(0) == '#') {
-		this.send_raw("JOIN " + chan);
-	}
+	char[] buf = new char[5 + this.debugchan.length];
+	set(buf, 0, 'J','O','I','N',' ');
+	arraycopy(this.debugchan, 0, buf, 5, this.debugchan.length);
+	this.send_raw(buf, 0, buf.length);
 }
 
 void disconnected()
@@ -492,6 +519,34 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 		this.privmsg(target, chars(sb));
 		return;
 	}
+
+	if (strcmp(cmd, 's','t','a','t','s') && is_owner(user)) {
+		if (this.stats_server == null) {
+			this.privmsg(target, "stats server was not started".toCharArray());
+			return;
+		}
+		if (this.stats_server.isAlive()) {
+			this.privmsg(target, "stats server seems to be running".toCharArray());
+			return;
+		}
+		this.stats_server = this.stats_server.create_new();
+		this.stats_server.start();
+		this.privmsg(target, "stats server was dead, has been started again".toCharArray());
+	}
+
+	if (strcmp(cmd, 'k','i','l','l','s','t','a','t','s') && is_owner(user)) {
+		if (this.stats_server == null) {
+			this.privmsg(target, "stats server was not started".toCharArray());
+			return;
+		}
+		if (this.stats_server.isAlive()) {
+			this.stats_server.interrupt();
+			this.privmsg(target, "stats server interrupted".toCharArray());
+			return;
+		}
+		this.privmsg(target, "stats server is dead".toCharArray());
+		return;
+	}
 }
 
 void handle_message(@Nullable User user, char[] target, boolean is_channel_message, char[] message)
@@ -596,6 +651,30 @@ void send_raw(char[] buf, int offset, int len)
 			Log.error("could not send message from anna", e);
 		}
 	}
+}
+
+@Override
+public
+void log_error(Throwable t, String message)
+{
+	Log.error(message, t);
+	this.privmsg(this.debugchan, ("err(+t): " + message).toCharArray());
+}
+
+@Override
+public
+void log_error(String message)
+{
+	Log.error(message);
+	this.privmsg(this.debugchan, ("err: " + message).toCharArray());
+}
+
+@Override
+public
+void log_warn(String message)
+{
+	Log.warn(message);
+	this.privmsg(this.debugchan, ("warn: " + message).toCharArray());
 }
 
 /**
