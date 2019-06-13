@@ -137,7 +137,7 @@ throws IOException
 			continue;
 		} else if (cr) {
 			cr = false;
-			if (c == '\n') {
+			if (c == '\n') synchronized (Anna.lock) {
 				if (debug_print_in) {
 					String msg;
 					msg = new String(buf, 0, pos);

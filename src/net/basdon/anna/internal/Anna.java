@@ -30,6 +30,11 @@ static final char[]
 	PREFIXES_DEFAULT = { '@', '+' },
 	MODES_DEFAULT = { 'o', 'v' };
 
+/**
+ * lock for synchronizing: anna, statsserver, jobs
+ */
+static Object lock = new Object();
+
 static
 {
 	default_config = new Properties();
@@ -56,6 +61,9 @@ static
 private final ArrayList<Channel> joined_channels;
 private final LinkedList<BufferedUserModeChange> usermode_updates;
 
+private boolean connection_state;
+private long time_start, time_connect, time_disconnect;
+private int disconnects;
 private StatsServer stats_server;
 private char command_prefix;
 private User[] owners;
@@ -77,6 +85,7 @@ Output writer;
 
 Anna(Config conf)
 {
+	this.time_start = this.time_disconnect = System.currentTimeMillis();
 	this.conf = conf;
 	this.joined_channels = new ArrayList<>();
 	this.usermode_updates = new LinkedList<>();
@@ -146,7 +155,19 @@ Config load_mod_conf(IMod requester, Properties defaults)
 void print_stats(Output out)
 throws IOException
 {
-	out.print("hi stats");
+	synchronized (lock) {
+		out.print("Anna\n");
+		out.print(" boot: " + format_time(this.time_start) + "\n");
+		if (this.connection_state) {
+			out.print(" connection: connected since "
+			          + format_time(time_connect) + "\n");
+		} else {
+			out.print(" connection: disconnected since "
+			          + format_time(time_disconnect) + "\n");
+		}
+		out.print(" disconnects since boot: " + disconnects + "\n");
+		out.print("\n");
+	}
 }
 
 void connecting()
@@ -225,11 +246,15 @@ void connected(Output writer)
 	set(buf, 0, 'J','O','I','N',' ');
 	arraycopy(this.debugchan, 0, buf, 5, this.debugchan.length);
 	this.send_raw(buf, 0, buf.length);
+	this.connection_state = true;
+	this.time_connect = System.currentTimeMillis();
 }
 
 void disconnected()
 {
 	this.writer = null;
+	this.connection_state = false;
+	this.disconnects++;
 }
 
 void dispatch_message(Message msg)

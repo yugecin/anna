@@ -18,6 +18,10 @@ import static net.basdon.anna.api.Util.*;
 
 class StatsServer extends Thread
 {
+static int serves;
+static int restarts = -1;
+static long last_start;
+
 private final Anna anna;
 private final int port;
 private final LinkedList<StatsServerConnection> connections;
@@ -41,10 +45,14 @@ public
 void run()
 {
 	try (ServerSocket socket = new ServerSocket(this.port)) {
+		restarts++;
+		last_start = System.currentTimeMillis();
 		this.socket = socket;
 		Log.info("stats listening on port " + this.port);
 		for (;;) {
 			Socket clientsocket = socket.accept();
+
+			serves++;
 
 			// kill slow connections
 			if (!this.connections.isEmpty()) {
@@ -167,7 +175,7 @@ throws IOException
 	if (head) {
 		out.write("Content-Length: ");
 		int[] length = { 0 };
-		anna.print_stats(new Anna.Output()
+		Anna.Output output = new Anna.Output()
 		{
 			@Override
 			public
@@ -184,14 +192,16 @@ throws IOException
 			{
 				length[0] += len;
 			}
-		});
+		};
+		append_my_stats(output);
+		anna.print_stats(output);
 		out.write(String.valueOf(length[0]));
 		out.write("\r\n\r\n");
 		return;
 	}
 
 	out.write("\r\n");
-	anna.print_stats(new Anna.Output()
+	Anna.Output output = new Anna.Output()
 	{
 		@Override
 		public
@@ -208,7 +218,23 @@ throws IOException
 		{
 			out.write(buf, offset, len);
 		}
-	});
+	};
+	append_my_stats(output);
+	anna.print_stats(output);
+}
+
+private
+void append_my_stats(Anna.Output out)
+throws IOException
+{
+	out.print("stats\n");
+	out.print(" boot: " + format_time(last_start) + "\n");
+	out.print(" restarts: " + restarts + "\n");
+	out.print(" serves: " + serves + "\n");
+	synchronized (connections) {
+		out.print(" connections: " + connections.size() + "\n");
+	}
+	out.print("\n");
 }
 } /*StatsServerConnection*/
 } /*StatsServer*/

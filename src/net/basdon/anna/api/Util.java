@@ -2,6 +2,8 @@
 // see the LICENSE file for more details
 package net.basdon.anna.api;
 
+import java.util.Date;
+
 public class Util
 {
 /**
@@ -137,5 +139,45 @@ void close(@Nullable AutoCloseable ac)
 			ac.close();
 		} catch (Throwable ignored) {}
 	}
+}
+
+/**
+ * formats time as time string + days/hours/minutes/seconds since that stamp
+ * @param millis epoch timestamp
+ */
+public static
+String format_time(long millis)
+{
+	StringBuilder sb = new StringBuilder();
+	sb.append(new Date(millis).toString());
+	millis = System.currentTimeMillis() - millis;
+	sb.append(" (");
+	millis /= 1000;
+	boolean y = false;
+	long t;
+	if (millis > 24 * 3600) {
+		t = millis / 3600 / 24;
+		sb.append(t).append('d');
+		millis %= 24 * 3600;
+		y = true;
+	}
+	if (y || millis > 3600) {
+		t = millis / 3600;
+		if (t < 10) sb.append('0');
+		sb.append(t).append('h');
+		millis %= 3600;
+		y = true;
+	}
+	if (y || millis > 60) {
+		t = millis / 60;
+		if (t < 10) sb.append('0');
+		sb.append(t).append('m');
+		millis %= 60;
+		y = true;
+	}
+	if (y && millis < 10) sb.append('0');
+	sb.append(millis).append('s');
+	sb.append(")");
+	return sb.toString();
 }
 }
