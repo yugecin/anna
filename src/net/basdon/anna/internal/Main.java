@@ -20,6 +20,8 @@ private static Socket socket;
 
 static boolean debug_print_in, debug_print_out;
 
+static int recv, sent;
+
 public static
 void main(String[] args)
 {
@@ -132,6 +134,7 @@ throws IOException
 			Log.warn("end of stream is reached");
 			break;
 		}
+		recv++;
 		if (c == '\r') {
 			cr = true;
 			continue;
@@ -252,6 +255,7 @@ throws IOException
 		// -2 to remove CRLF
 		System.out.println("-> " + new String(buf, offset, len - 2));
 	}
+	Main.sent += len;
 	out.write(buf, offset, len);
 	out.flush();
 }
