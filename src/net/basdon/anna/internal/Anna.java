@@ -270,11 +270,16 @@ void dispatch_message(Message msg)
 	if (strcmp(msg.cmd, CMD_PRIVMSG) && msg.prefix != null && msg.paramc == 2) {
 		char[] target = msg.paramv[0];
 		char[] message = msg.paramv[1];
-		boolean is_channel_message = target[0] == '#';
-		if (message[0] == this.command_prefix) {
-			this.handle_command(user, target, is_channel_message, message);
+		char[] replytarget;
+		if (strcmp(target, me.nick)) {
+			replytarget = user == null ? null : user.nick;
+		} else {
+			replytarget = target;
 		}
-		this.handle_message(user, target, is_channel_message, message);
+		if (message[0] == this.command_prefix) {
+			this.handle_command(user, target, replytarget, message);
+		}
+		this.handle_message(user, target, replytarget, message);
 		return;
 	}
 
@@ -441,7 +446,13 @@ void handle_nick(User user, char[] newnick)
 	}
 }
 
-void handle_command(@Nullable User user, char[] target, boolean is_channel_message, char[] message)
+/**
+ * it's a channel message if {@code target == replytarget}
+ * @param target target message was sent to, either a channel or anna user
+ * @param replytarget target to send a reply to, either a channel or user that send the command
+ */
+void handle_command(@Nullable User user, char[] target, @Nullable char[] replytarget,
+                    char[] message)
 {
 	char[] cmd;
 	char[] params = null;
@@ -470,12 +481,13 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 
 	if (strcmp(cmd, 'r','a','w') && params != null && is_owner(user)) {
 		send_raw(params, 0, params.length);
+		return;
 	}
 
 	if (strcmp(cmd, 's','a','y') && params != null && is_owner(user)) {
 		int space = indexOf(params, 0, params.length, ' ');
 		if (space == -1 || space == params.length - 1) {
-			this.privmsg(target, "usage: say <target> <message>".toCharArray());
+			this.privmsg(replytarget, "usage: say <target> <message>".toCharArray());
 		} else {
 			char[] saytarget = new char[space];
 			char[] saytext = new char[params.length - space - 1];
@@ -488,7 +500,7 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 	if (strcmp(cmd, 'a','c','t','i','o','n') && params != null && is_owner(user)) {
 		int space = indexOf(params, 0, params.length, ' ');
 		if (space == -1 || space == params.length - 1) {
-			this.privmsg(target, "usage: action <target> <message>".toCharArray());
+			this.privmsg(replytarget, "usage: action <target> <message>".toCharArray());
 		} else {
 			char[] actiontarget = new char[space];
 			char[] actiontext = new char[params.length - space - 1];
@@ -513,14 +525,14 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 			sb.append(' ');
 			sb.append(this.joined_channels.get(i).name);
 		}
-		this.privmsg(target, chars(sb));
+		this.privmsg(replytarget, chars(sb));
 		return;
 	}
 
 	if (strcmp(cmd, 'u','s','e','r','s') && params != null && is_owner(user)) {
 		Channel chan = this.channel_find(params);
 		if (chan == null) {
-			this.privmsg(target, "I'm not in that channel".toCharArray());
+			this.privmsg(replytarget, "I'm not in that channel".toCharArray());
 			return;
 		}
 		StringBuilder sb = new StringBuilder(500);
@@ -543,40 +555,45 @@ void handle_command(@Nullable User user, char[] target, boolean is_channel_messa
 			sb.append(usr.nick);
 			sb.append('Z'); // to not nickalert everyone
 		}
-		this.privmsg(target, chars(sb));
+		this.privmsg(replytarget, chars(sb));
 		return;
 	}
 
 	if (strcmp(cmd, 's','t','a','t','s') && is_owner(user)) {
 		if (this.stats_server == null) {
-			this.privmsg(target, "stats server was not started".toCharArray());
+			this.privmsg(replytarget, "stats server was not started".toCharArray());
 			return;
 		}
 		if (this.stats_server.isAlive()) {
-			this.privmsg(target, "stats server seems to be running".toCharArray());
+			this.privmsg(replytarget, "stats server seems to be running".toCharArray());
 			return;
 		}
 		this.stats_server = this.stats_server.create_new();
 		this.stats_server.start();
-		this.privmsg(target, "stats server was dead, has been started again".toCharArray());
+		this.privmsg(replytarget, "stats server was dead, is restarted".toCharArray());
 	}
 
 	if (strcmp(cmd, 'k','i','l','l','s','t','a','t','s') && is_owner(user)) {
 		if (this.stats_server == null) {
-			this.privmsg(target, "stats server was not started".toCharArray());
+			this.privmsg(replytarget, "stats server was not started".toCharArray());
 			return;
 		}
 		if (this.stats_server.isAlive()) {
 			this.stats_server.interrupt();
-			this.privmsg(target, "stats server interrupted".toCharArray());
+			this.privmsg(replytarget, "stats server interrupted".toCharArray());
 			return;
 		}
-		this.privmsg(target, "stats server is dead".toCharArray());
+		this.privmsg(replytarget, "stats server is dead".toCharArray());
 		return;
 	}
 }
 
-void handle_message(@Nullable User user, char[] target, boolean is_channel_message, char[] message)
+/**
+ * it's a channel message if {@code target == replytarget}
+ * @param target target message was sent to, either a channel or anna user
+ * @param replytarget target to send a reply to, either a channel or user that send the command
+ */
+void handle_message(@Nullable User user, char[] target, char[] replytarget, char[] message)
 {
 }
 
@@ -626,8 +643,11 @@ boolean is_owner(@Nullable User user)
 
 @Override
 public
-void privmsg(char[] target, char[] text)
+void privmsg(@Nullable char[] target, char[] text)
 {
+	if (target == null) {
+		return;
+	}
 	char[] buf = new char[8 + target.length + 2 + text.length];
 	int off = 0;
 	off = set(buf, off, "PRIVMSG ".toCharArray());
@@ -641,8 +661,11 @@ void privmsg(char[] target, char[] text)
 
 @Override
 public
-void action(char[] target, char[] text)
+void action(@Nullable char[] target, char[] text)
 {
+	if (target == null) {
+		return;
+	}
 	char[] buf = new char[8 + target.length + 10 + text.length + 1];
 	int off = 0;
 	off = set(buf, off, "PRIVMSG ".toCharArray());
