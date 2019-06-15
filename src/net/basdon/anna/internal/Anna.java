@@ -337,6 +337,13 @@ void dispatch_message(Message msg)
 		return;
 	}
 
+	// <- :Anna^!Anna@EXP-93BCB88D.access.telenet.be KICK #anna robin_be :bai
+	// <- :Anna^!Anna@EXP-93BCB88D.access.telenet.be KICK #anna robin_be
+	if (strcmp(msg.cmd, CMD_KICK) && user != null && msg.paramc > 1) {
+		handle_kick(user, msg.paramv[0], msg.paramv[1], msg.paramv[2]);
+		return;
+	}
+
 	// <- :robin_be!*@* TOPIC #anna :topic
 	if (strcmp(msg.cmd, CMD_TOPIC) && msg.paramc == 2) {
 		handle_topic(user, msg.paramv[0], msg.paramv[1]);
@@ -424,22 +431,12 @@ void handle_quit(User user, char[] channel, @Nullable char[] msg)
 
 void handle_part(User user, char[] channel, @Nullable char[] msg)
 {
-	if (strcmp(user.nick, me.nick)) {
-		this.channel_unregister(channel);
-		return;
-	}
+	this.channel_remove_user(user.nick, channel);
+}
 
-	Channel chan = this.channel_find(channel);
-	if (chan != null) {
-		int i = chan.userlist.size();
-		while (i-- > 0) {
-			ChannelUser u = chan.userlist.get(i);
-			if (strcmp(user.nick, u.nick)) {
-				chan.userlist.remove(i);
-				break;
-			}
-		}
-	}
+void handle_kick(User user, char[] channel, char[] kickeduser, @Nullable char[] msg)
+{
+	this.channel_remove_user(kickeduser, channel);
 }
 
 void handle_nick(User user, char[] newnick)
@@ -646,6 +643,26 @@ void channel_unregister(char[] channel)
 		if (strcmp(channel, this.joined_channels.get(i).name)) {
 			this.joined_channels.remove(i);
 			return;
+		}
+	}
+}
+
+void channel_remove_user(char[] user, char[] channel)
+{
+	if (strcmp(user, me.nick)) {
+		this.channel_unregister(channel);
+		return;
+	}
+
+	Channel chan = this.channel_find(channel);
+	if (chan != null) {
+		int i = chan.userlist.size();
+		while (i-- > 0) {
+			ChannelUser u = chan.userlist.get(i);
+			if (strcmp(user, u.nick)) {
+				chan.userlist.remove(i);
+				break;
+			}
 		}
 	}
 }

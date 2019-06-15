@@ -22,6 +22,7 @@ public static final char[]
 	CMD_PART = {'P', 'A', 'R', 'T'},
 	CMD_QUIT = {'Q', 'U', 'I', 'T'},
 	CMD_NICK = {'N', 'I', 'C', 'K'},
+	CMD_KICK = {'K', 'I', 'C', 'K'},
 	CMD_TOPIC = {'T', 'O', 'P', 'I', 'C'},
 	CMD_PRIVMSG = {'P', 'R', 'I', 'V', 'M', 'S', 'G' };
 
