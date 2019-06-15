@@ -659,14 +659,6 @@ void action(char[] target, char[] text)
 
 @Override
 public
-void send_raw(String msg)
-{
-	char[] chars = msg.toCharArray();
-	this.send_raw(chars, 0, chars.length);
-}
-
-@Override
-public
 void send_raw(char[] buf, int offset, int len)
 {
 	if (this.writer != null) {

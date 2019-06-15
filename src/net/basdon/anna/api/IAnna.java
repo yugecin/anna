@@ -23,10 +23,8 @@ boolean is_owner(@Nullable User user);
 void privmsg(char[] target, char[] msg);
 void action(char[] target, char[] msg);
 /**
- * should not include CRLF
- */
-void send_raw(String msg);
-/**
+ * don't use for privmsg, use {@link #privmsg} or {@link action} for that
+ *
  * should not include CRLF
  */
 void send_raw(char[] buf, int offset, int len);
