@@ -749,8 +749,13 @@ class RestartException extends RuntimeException
 
 interface Output
 {
+default
 void print(String msg)
-throws IOException;
+throws IOException
+{
+	char[] chars = msg.toCharArray();
+	this.print(chars, 0, chars.length);
+}
 
 void print(char[] buf, int offset, int len)
 throws IOException;

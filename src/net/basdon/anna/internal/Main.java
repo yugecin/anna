@@ -239,15 +239,6 @@ CapturedWriter(OutputStream out)
 
 @Override
 public
-void print(String msg)
-throws IOException
-{
-	char[] chars = msg.toCharArray();
-	this.print(chars, 0, chars.length);
-}
-
-@Override
-public
 void print(char[] buf, int offset, int len)
 throws IOException
 {

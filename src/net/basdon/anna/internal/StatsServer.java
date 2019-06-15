@@ -3,7 +3,6 @@
 package net.basdon.anna.internal;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -20,6 +19,7 @@ class StatsServer extends Thread
 {
 static int serves;
 static int restarts = -1;
+static int sent, recv;
 static long last_start;
 
 private final Anna anna;
@@ -119,6 +119,8 @@ class StatsServerConnection extends Thread
 private final Socket socket;
 private final long starttime;
 
+private int recv, sent;
+
 private
 StatsServerConnection(Socket socket)
 {
@@ -132,109 +134,106 @@ void run()
 {
 	try {
 		BufferedReader in;
-		BufferedWriter out;
+		OutputStreamWriter writer;
+		WrappedOutput out;
+
 		in = new BufferedReader(new InputStreamReader(socket.getInputStream(), UTF_8));
-		out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), UTF_8));
+		writer = new OutputStreamWriter(socket.getOutputStream(), UTF_8);
+		out = new WrappedOutput(writer);
 		String line = in.readLine();
 		if (line == null) {
 			return;
 		}
+		this.recv += line.length();
 		boolean head = line.startsWith("HEAD");
 		boolean favicon = line.contains("favicon.ico");
 		while ((line = in.readLine()) != null) {
 			if (line.isEmpty()) {
 				send_response(out, head, favicon);
-				out.flush();
+				writer.flush();
 				break;
 			}
 		}
+		this.sent += out.sent;
 	} catch (IOException e) {
 		Log.warn("exception while handling a stats connection: " + e.getMessage());
 	} finally {
 		close(socket);
 		synchronized (connections) {
 			connections.remove(this);
+			StatsServer.sent += this.sent;
+			StatsServer.recv += this.recv;
 		}
 	}
 }
 
 private
-void send_response(BufferedWriter out, boolean head, boolean favicon)
+void send_response(WrappedOutput out, boolean head, boolean favicon)
 throws IOException
 {
 	if (favicon) {
-		out.write("HTTP/1.1 404 Not Found\r\nConnection: Close\r\n"
+		out.print("HTTP/1.1 404 Not Found\r\nConnection: Close\r\n"
 			  + "Content-Length: 0\r\n\r\n");
 		return;
 	}
 
-	out.write("HTTP/1.1 200 OK\r\nConnection: Close\r\n"
+	out.print("HTTP/1.1 200 OK\r\nConnection: Close\r\n"
 		  + "Content-Type: text/plain; charset=utf-8\r\n"
 		  + "Access-Control-Allow-Origin: *\r\n");
 
 	if (head) {
-		out.write("Content-Length: ");
-		int[] length = { 0 };
-		Anna.Output output = new Anna.Output()
-		{
-			@Override
-			public
-			void print(String msg)
-			throws IOException
-			{
-				length[0] += msg.length();
-			}
-
-			@Override
-			public
-			void print(char[] buf, int offset, int len)
-			throws IOException
-			{
-				length[0] += len;
-			}
-		};
-		append_my_stats(output);
-		anna.print_stats(output);
-		out.write(String.valueOf(length[0]));
-		out.write("\r\n\r\n");
-		return;
+		out.print("Content-Length: ");
+		int headerlen = out.sent;
+		out.do_send = false;
+		write_stats(out);
+		out.print(String.valueOf(out.sent - headerlen));
+		out.sent = headerlen;
+		out.do_send = true;
+		out.print("\r\n\r\n");
+	} else {
+		out.print("\r\n");
+		write_stats(out);
 	}
-
-	out.write("\r\n");
-	Anna.Output output = new Anna.Output()
-	{
-		@Override
-		public
-		void print(String msg)
-		throws IOException
-		{
-			out.write(msg);
-		}
-
-		@Override
-		public
-		void print(char[] buf, int offset, int len)
-		throws IOException
-		{
-			out.write(buf, offset, len);
-		}
-	};
-	append_my_stats(output);
-	anna.print_stats(output);
 }
 
 private
-void append_my_stats(Anna.Output out)
+void write_stats(Anna.Output out)
 throws IOException
 {
-	out.print("stats\n");
+	out.print("Stats\n");
 	out.print(" boot: " + format_time(last_start) + "\n");
 	out.print(" restarts: " + restarts + "\n");
 	out.print(" serves: " + serves + "\n");
+	out.print(" bytes sent: " + StatsServer.sent + "\n");
+	out.print(" bytes recv: " + StatsServer.recv + "\n");
 	synchronized (connections) {
-		out.print(" connections: " + connections.size() + "\n");
+		out.print(" active connections: " + connections.size() + "\n");
 	}
 	out.print("\n");
+	anna.print_stats(out);
 }
 } /*StatsServerConnection*/
 } /*StatsServer*/
+
+class WrappedOutput implements Anna.Output
+{
+private final OutputStreamWriter out;
+
+boolean do_send;
+int sent;
+
+WrappedOutput(OutputStreamWriter out)
+{
+	this.out = out;
+	this.do_send = true;
+}
+
+@Override
+public void print(char[] buf, int offset, int len) throws IOException
+{
+	if (do_send) {
+		this.out.write(buf, offset, len);
+	}
+	this.sent += len;
+}
+}
