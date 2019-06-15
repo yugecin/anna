@@ -276,9 +276,21 @@ void dispatch_message(Message msg)
 		} else {
 			replytarget = target;
 		}
+
+		if (strcmp(message, 0, 8, '\1','A','C','T','I','O','N',' ') &&
+			message[message.length - 1] == '\1')
+		{
+			char[] action = new char[message.length - 9];
+			arraycopy(message, 8, action, 0, action.length);
+			this.handle_action(user, target, replytarget, action);
+			return;
+		}
+
 		if (message[0] == this.command_prefix) {
 			this.handle_command(user, target, replytarget, message);
+			return;
 		}
+
 		this.handle_message(user, target, replytarget, message);
 		return;
 	}
@@ -594,6 +606,15 @@ void handle_command(@Nullable User user, char[] target, @Nullable char[] replyta
  * @param replytarget target to send a reply to, either a channel or user that send the command
  */
 void handle_message(@Nullable User user, char[] target, char[] replytarget, char[] message)
+{
+}
+
+/**
+ * it's a channel message if {@code target == replytarget}
+ * @param target target message was sent to, either a channel or anna user
+ * @param replytarget target to send a reply to, either a channel or user that send the command
+ */
+void handle_action(@Nullable User user, char[] target, char[] replytarget, char[] action)
 {
 }
 
