@@ -101,7 +101,7 @@ int main()
 		}
 
 		if (shutdown) {
-			Log.info("shutdown requested");
+			Log.info("shutdown was requested");
 			break;
 		}
 
