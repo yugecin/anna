@@ -156,10 +156,6 @@ void print_stats(Output out)
 throws IOException
 {
 	synchronized (lock) {
-		out.print("Main\n");
-		out.print(" bytes recv: " + Main.recv + "\n");
-		out.print(" bytes sent: " + Main.sent + "\n");
-		out.print("\n");
 		out.print("Anna\n");
 		out.print(" boot: " + format_time(this.time_start) + "\n");
 		if (this.connection_state) {
@@ -170,6 +166,8 @@ throws IOException
 			          + format_time(time_disconnect) + "\n");
 		}
 		out.print(" disconnects since boot: " + disconnects + "\n");
+		out.print(" bytes recv: " + Main.recv + "\n");
+		out.print(" bytes sent: " + Main.sent + "\n");
 		out.print("\n");
 	}
 }
