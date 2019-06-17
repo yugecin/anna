@@ -11,21 +11,6 @@ import static net.basdon.anna.api.Util.*;
  */
 public class Message
 {
-
-@Nullable
-public char[] prefix;
-/**
- * command number or {@code 0} if it was not a three digit number
- */
-public int cmdnum;
-public char[] cmd;
-/**
- * {@code true} if last parameter is trailing (starts with : (but the : is stripped))
- */
-public boolean trailing_param;
-public int paramc;
-public char[][] paramv = new char[15][];
-
 static ThreadLocal<String> lasterr = new ThreadLocal<>();
 
 public static
@@ -139,4 +124,18 @@ Message parse(char[] buf, int buflen)
 
 	return msg;
 }
+
+@Nullable
+public char[] prefix;
+/**
+ * command number or {@code 0} if it was not a three digit number
+ */
+public int cmdnum;
+public char[] cmd;
+/**
+ * {@code true} if last parameter is trailing (starts with : (but the : is stripped))
+ */
+public boolean trailing_param;
+public int paramc;
+public char[][] paramv = new char[15][];
 }
