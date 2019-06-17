@@ -161,7 +161,9 @@ throws IOException
 				}
 
 				Message msg = Message.parse(buf, pos);
-				if (msg != null) {
+				if (msg == null) {
+					Log.warn(Message.get_last_error());
+				} else {
 					/*
 					System.out.println("Message:");
 					System.out.println("  prefix " + new String(msg.prefix));

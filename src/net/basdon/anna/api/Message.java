@@ -2,8 +2,6 @@
 // see the LICENSE file for more details
 package net.basdon.anna.api;
 
-import net.basdon.anna.internal.Log;
-
 import static java.lang.System.arraycopy;
 import static net.basdon.anna.api.Util.*;
 
@@ -13,6 +11,7 @@ import static net.basdon.anna.api.Util.*;
  */
 public class Message
 {
+
 @Nullable
 public char[] prefix;
 /**
@@ -27,10 +26,23 @@ public boolean trailing_param;
 public int paramc;
 public char[][] paramv = new char[15][];
 
+static ThreadLocal<String> lasterr = new ThreadLocal<>();
+
+public static
+String get_last_error()
+{
+	String err = lasterr.get();
+	lasterr.remove();
+	return err;
+}
+
 /**
  * @param buf buffer
  * @param buflen length of buffer, should be at least {@code 1}
- * @return an instance of {@link Message} or {@code null} if the message could not be parsed
+ * @return an instance of {@link Message} or {@code null} if the message could not be parsed.
+ *         When {@code null} is returned, {@link #get_last_error()} can be called to receive an
+ *         error string. Note that this method should always be called on returning {@code null}
+ *         to prevent memory leakage.
  */
 public static
 Message parse(char[] buf, int buflen)
@@ -50,8 +62,8 @@ Message parse(char[] buf, int buflen)
 			while (buf[parsepos] == ' ') {
 				parsepos++;
 				if (parsepos >= buflen) {
-					Log.warn("unexpected end of message: "
-					         + new String(buf, 0, buflen));
+					lasterr.set("unexpected end of message: "
+					            + new String(buf, 0, buflen));
 					return null;
 				}
 			}
@@ -65,7 +77,7 @@ Message parse(char[] buf, int buflen)
 	while ((c = buf[parsepos]) != ' ') {
 		parsepos++;
 		if (parsepos >= buflen) {
-			Log.warn("unexpected end of message: " + new String(buf, 0, buflen));
+			lasterr.set("unexpected end of message: " + new String(buf, 0, buflen));
 			return null;
 		}
 		cmdlen++;
@@ -90,8 +102,8 @@ Message parse(char[] buf, int buflen)
 		if ((isend = parsepos >= buflen) || (c = buf[parsepos]) == ' ') {
 			if (paramstart != -1) {
 				if (msg.paramc >= msg.paramv.length) {
-					Log.warn("too many params in message: "
-					         + new String(buf, 0, buflen));
+					lasterr.set("too many params in message: "
+					            + new String(buf, 0, buflen));
 					return null;
 				}
 				int len = parsepos - paramstart;
@@ -106,8 +118,8 @@ Message parse(char[] buf, int buflen)
 		if (paramstart == -1 && c != ' ') {
 			if (c == ':') {
 				if (msg.paramc >= msg.paramv.length) {
-					Log.warn("too many params in message: "
-					         + new String(buf, 0, buflen));
+					lasterr.set("too many params in message: "
+					            + new String(buf, 0, buflen));
 					return null;
 				}
 				parsepos++;
