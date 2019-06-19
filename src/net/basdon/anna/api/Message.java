@@ -125,7 +125,9 @@ Message parse(char[] buf, int buflen)
 	return msg;
 }
 
-@Nullable
+/**
+ * prefix or {@code null} if not present
+ */
 public char[] prefix;
 /**
  * command number or {@code 0} if it was not a three digit number

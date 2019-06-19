@@ -40,7 +40,9 @@ User parse(char[] user, int from, int to)
 }
 
 public char[] nick;
-@Nullable
+/**
+ * name or {@code null} if not present
+ */
 public char[] name;
 public char[] host;
 

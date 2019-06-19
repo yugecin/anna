@@ -12,7 +12,6 @@ import net.basdon.anna.api.Config;
 import net.basdon.anna.api.IAnna;
 import net.basdon.anna.api.IMod;
 import net.basdon.anna.api.Message;
-import net.basdon.anna.api.Nullable;
 import net.basdon.anna.api.User;
 
 import static java.lang.System.arraycopy;
@@ -425,16 +424,25 @@ void handle_join(User user, char[] channel)
 	}
 }
 
-void handle_quit(User user, char[] channel, @Nullable char[] msg)
+/**
+ * @param msg quit msg or {@code null}
+ */
+void handle_quit(User user, char[] channel, char[] msg)
 {
 }
 
-void handle_part(User user, char[] channel, @Nullable char[] msg)
+/**
+ * @param msg part msg or {@code null}
+ */
+void handle_part(User user, char[] channel, char[] msg)
 {
 	this.channel_remove_user(user.nick, channel);
 }
 
-void handle_kick(User user, char[] channel, char[] kickeduser, @Nullable char[] msg)
+/**
+ * @param msg kick msg or {@code null}
+ */
+void handle_kick(User user, char[] channel, char[] kickeduser, char[] msg)
 {
 	this.channel_remove_user(kickeduser, channel);
 }
@@ -457,11 +465,12 @@ void handle_nick(User user, char[] newnick)
 
 /**
  * it's a channel message if {@code target == replytarget}
+ * @param user user that sent the command or {@code null}
  * @param target target message was sent to, either a channel or anna user
- * @param replytarget target to send a reply to, either a channel or user that send the command
+ * @param replytarget target to send a reply to, either a channel or user that send the command, may
+ *        be {@code null}
  */
-void handle_command(@Nullable User user, char[] target, @Nullable char[] replytarget,
-                    char[] message)
+void handle_command(User user, char[] target, char[] replytarget, char[] message)
 {
 	char[] cmd;
 	char[] params = null;
@@ -599,19 +608,21 @@ void handle_command(@Nullable User user, char[] target, @Nullable char[] replyta
 
 /**
  * it's a channel message if {@code target == replytarget}
+ * @param user user that sent the message or {@code null}
  * @param target target message was sent to, either a channel or anna user
  * @param replytarget target to send a reply to, either a channel or user that send the command
  */
-void handle_message(@Nullable User user, char[] target, char[] replytarget, char[] message)
+void handle_message(User user, char[] target, char[] replytarget, char[] message)
 {
 }
 
 /**
  * it's a channel message if {@code target == replytarget}
+ * @param user user that sent the action or {@code null}
  * @param target target message was sent to, either a channel or anna user
  * @param replytarget target to send a reply to, either a channel or user that send the command
  */
-void handle_action(@Nullable User user, char[] target, char[] replytarget, char[] action)
+void handle_action(User user, char[] target, char[] replytarget, char[] action)
 {
 }
 
@@ -623,7 +634,9 @@ void handle_usermodechange(Channel chan, ChannelUser user, char sign, char mode)
 {
 }
 
-@Nullable
+/**
+ * @return channel or {@code null}
+ */
 Channel channel_find(char[] channel)
 {
 	int i = this.joined_channels.size();
@@ -669,7 +682,7 @@ void channel_remove_user(char[] user, char[] channel)
 
 @Override
 public
-boolean is_owner(@Nullable User user)
+boolean is_owner(User user)
 {
 	for (User o : this.owners) {
 		if (o.matches(user)) {
@@ -681,7 +694,7 @@ boolean is_owner(@Nullable User user)
 
 @Override
 public
-void privmsg(@Nullable char[] target, char[] text)
+void privmsg(char[] target, char[] text)
 {
 	if (target == null) {
 		return;
@@ -699,7 +712,7 @@ void privmsg(@Nullable char[] target, char[] text)
 
 @Override
 public
-void action(@Nullable char[] target, char[] text)
+void action(char[] target, char[] text)
 {
 	if (target == null) {
 		return;

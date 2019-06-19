@@ -82,8 +82,12 @@ boolean strcmp(char[] a, int offset, int to, char...b)
 	return true;
 }
 
+/**
+ * @param a may be {@code null}
+ * @param b may be {@code null}
+ */
 public static
-boolean strcmp(@Nullable char[] a, @Nullable char...b)
+boolean strcmp(char[] a, char...b)
 {
 	if (a == null || b == null || a.length != b.length) {
 		return false;
@@ -131,8 +135,11 @@ char[] chars(StringBuilder sb)
 	return buf;
 }
 
+/**
+ * @param ac may be {@code null}
+ */
 public static
-void close(@Nullable AutoCloseable ac)
+void close(AutoCloseable ac)
 {
 	if (ac != null) {
 		try {

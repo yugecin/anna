@@ -26,5 +26,4 @@ boolean onEnable();
  * Remember to unregister every registered listeners etc.
  */
 void onDisable();
-void onRaw(String raw);
 }
