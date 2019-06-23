@@ -19,12 +19,7 @@ import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import net.basdon.anna.api.ChannelUser;
-import net.basdon.anna.api.Config;
-import net.basdon.anna.api.IAnna;
-import net.basdon.anna.api.IMod;
-import net.basdon.anna.api.Message;
-import net.basdon.anna.api.User;
+import net.basdon.anna.api.*;
 
 import static java.lang.System.arraycopy;
 import static net.basdon.anna.api.Constants.*;
@@ -73,7 +68,7 @@ static
 
 private final ArrayList<IMod> mods;
 private final HashMap<IMod, File> modfile;
-private final ArrayList<ChannelImpl> joined_channels;
+private final ArrayList<Channel> joined_channels;
 private final LinkedList<BufferedUserModeChange> usermode_updates;
 
 private boolean connection_state;
@@ -190,7 +185,7 @@ throws IOException
 		int i = this.joined_channels.size();
 		while (i-- > 0) {
 			out.print("  ");
-			ChannelImpl chan = this.joined_channels.get(i);
+			Channel chan = this.joined_channels.get(i);
 			out.print(chan.name, 0, chan.name.length);
 			out.print(":");
 			int j = chan.userlist.size();
@@ -551,7 +546,7 @@ void handle_nick(User user, char[] newnick)
 {
 	int i = this.joined_channels.size();
 	while (i-- > 0) {
-		ChannelImpl chan = this.joined_channels.get(i);
+		Channel chan = this.joined_channels.get(i);
 		int j = chan.userlist.size();
 		while (j-- > 0) {
 			ChannelUser usr = chan.userlist.get(j);
@@ -975,14 +970,7 @@ void mods_invoke(String target, Consumer<IMod> invoker)
  */
 ChannelImpl channel_find(char[] channel)
 {
-	int i = this.joined_channels.size();
-	while (i-- > 0) {
-		ChannelImpl chan = this.joined_channels.get(i);
-		if (strcmp(channel, chan.name)) {
-			return chan;
-		}
-	}
-	return null;
+	return (ChannelImpl) find_channel(channel);
 }
 
 void channel_unregister(char[] channel)
@@ -1014,6 +1002,26 @@ void channel_remove_user(char[] user, char[] channel)
 			}
 		}
 	}
+}
+
+@Override
+public
+ArrayList<Channel> get_joined_channels()
+{
+	return this.joined_channels;
+}
+
+@Override
+public Channel find_channel(char[] channel)
+{
+	int i = this.joined_channels.size();
+	while (i-- > 0) {
+		Channel chan = this.joined_channels.get(i);
+		if (strcmp(channel, chan.name)) {
+			return chan;
+		}
+	}
+	return null;
 }
 
 @Override

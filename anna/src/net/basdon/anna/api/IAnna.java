@@ -3,6 +3,7 @@
 package net.basdon.anna.api;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Properties;
 
 public interface IAnna
@@ -18,11 +19,19 @@ public interface IAnna
  */
 Config load_mod_conf(IMod requester, Properties defaults);
 /**
- * @return array of all known user channel modes
+ * @return a list of all joined channels (not a copy, don't edit this list)
+ */
+ArrayList<Channel> get_joined_channels();
+/**
+ * @return found channel or {@code null}
+ */
+Channel find_channel(char[] channel);
+/**
+ * @return array of all known user channel modes (not a copy, don't edit this array)
  */
 char[] get_user_channel_modes();
 /**
- * @return array of all known user channel mode prefixes
+ * @return array of all known user channel mode prefixes (not a copy, don't edit this array)
  */
 char[] get_user_channel_prefixes();
 /**
