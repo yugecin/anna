@@ -156,6 +156,16 @@ Anna(Config conf)
 	} else {
 		this.debugchan = "#anna".toCharArray();
 	}
+
+	// remove old tmp mod jars
+	File[] files = new File(".").getAbsoluteFile().listFiles();
+	for (File f : files) {
+		if (f.getName().startsWith(".tmp-mod_")) {
+			if (!f.delete()) {
+				Log.warn("could not remove leftover tmp mod jar " + f.getName());
+			}
+		}
+	}
 }
 
 @Override
