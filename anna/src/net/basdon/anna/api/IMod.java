@@ -30,10 +30,10 @@ throws IOException;
  * Called when this mod is being loaded.
  * @return {@code false} if it's not possible to enable this mod
  */
-boolean on_enable();
+boolean on_enable(IAnna anna);
 /**
  * Called when this mod is being unloaded.
- * Remember to unregister every registered listeners etc.
+ * Remember to unregister every registered listeners, interrupt threads, ...
  */
 void on_disable();
 /**
@@ -58,10 +58,12 @@ void on_message(User user, char[] target, char[] replytarget, char[] message)
  * @param replytarget target to reply to, channel or sending user if PM
  * @param cmd cmd that was invoked
  * @param params parameters of the cmd as one single string
+ * @return {@code true} if the command was handled (this value is currently unused)
  */
 default
-void on_command(User user, char[] target, char[] replytarget, char[] cmd, char[] params)
+boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, char[] params)
 {
+	return false;
 }
 /**
  * Called when an action message is received. May be channel or private.

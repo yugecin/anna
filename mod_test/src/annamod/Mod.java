@@ -2,11 +2,8 @@
 // see the LICENSE file for more details
 package annamod;
 
-import net.basdon.anna.api.Channel;
-import net.basdon.anna.api.ChannelUser;
+import net.basdon.anna.api.*;
 import net.basdon.anna.api.IAnna.Output;
-import net.basdon.anna.api.IMod;
-import net.basdon.anna.api.User;
 
 import static java.lang.System.out;
 
@@ -45,7 +42,7 @@ throws IOException
 
 @Override
 public
-boolean on_enable()
+boolean on_enable(IAnna anna)
 {
 	out.println("mod_test: enabled");
 	return true;
@@ -73,7 +70,7 @@ void on_message(User user, char[] target, char[] replytarget, char[] message)
 
 @Override
 public
-void on_command(User user, char[] target, char[] replytarget, char[] cmd, char[] params)
+boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, char[] params)
 {
 	out.printf(
 		"mod_test: on_command user: %s target: %s replytarget: %s cmd: %s params: %s%n",
@@ -83,6 +80,7 @@ void on_command(User user, char[] target, char[] replytarget, char[] cmd, char[]
 		new String(cmd),
 		new String(params)
 	);
+	return false;
 }
 
 @Override

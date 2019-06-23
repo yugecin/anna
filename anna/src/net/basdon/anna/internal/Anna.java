@@ -870,7 +870,8 @@ void mod_load(char[] modname, char[] replytarget)
 				);
 				return;
 			}
-			if (!Boolean.TRUE.equals(mod_invoke(mod, "enable", mod::on_enable))) {
+			Supplier<Boolean> func = () -> Boolean.valueOf(mod.on_enable(this));
+			if (!Boolean.TRUE.equals(mod_invoke(mod, "enable", func))) {
 				this.privmsg(replytarget, "mod failed to enable".toCharArray());
 				return;
 			}
@@ -1141,6 +1142,15 @@ void log_warn(String message)
 {
 	Log.warn(message);
 	this.privmsg(this.debugchan, ("warn: " + message).toCharArray());
+}
+
+@Override
+public
+void sync_exec(Runnable func)
+{
+	synchronized (Anna.lock) {
+		func.run();
+	}
 }
 
 /**

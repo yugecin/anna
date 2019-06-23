@@ -14,8 +14,8 @@ public interface IAnna
  *
  * @param requester the mod that wants to load its config
  * @param defaults default settings or {@code null}
- * @return config or {@code null} if config does not exist or an error occured while reading
- *         the file.
+ * @return config or {@code null} if an error occured while reading the file or the config did not
+ *         exist and defaults could not be written into a new config file.
  */
 Config load_mod_conf(IMod requester, Properties defaults);
 /**
@@ -61,6 +61,11 @@ void send_raw(char[] buf, int offset, int len);
 void log_error(Throwable t, String message);
 void log_error(String message);
 void log_warn(String message);
+/**
+ * Run given function on the main thread. Use this when trying to do anna stuff from a non-main
+ * thread.
+ */
+void sync_exec(Runnable func);
 
 interface Output
 {
