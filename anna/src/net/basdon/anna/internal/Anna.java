@@ -376,8 +376,8 @@ void dispatch_message(Message msg)
 	}
 
 	// <- :mib!*@* QUIT :Quit: http://www.mibbit.com ajax IRC Client
-	if (strcmp(msg.cmd, CMD_QUIT) && user != null && msg.paramc > 0) {
-		handle_quit(user, msg.paramv[0], msg.paramv[1]);
+	if (strcmp(msg.cmd, CMD_QUIT)) {
+		handle_quit(user, msg.paramv[0]);
 		return;
 	}
 
@@ -460,6 +460,12 @@ void dispatch_message(Message msg)
 	}
 }
 
+/**
+ * Called when a user joins a channel.
+ *
+ * @param user user that joined a channel
+ * @param channel the channel they joined
+ */
 void handle_join(User user, char[] channel)
 {
 	if (strcmp(user.nick, me.nick)) {
@@ -474,31 +480,54 @@ void handle_join(User user, char[] channel)
 	if (chan != null) {
 		chan.userlist.add(new ChannelUserImpl(user.nick));
 	}
+
+	this.mods_invoke("join", m -> m.on_join(user, channel));
 }
 
 /**
- * @param msg quit msg or {@code null}
+ * Called when a user quits.
+ *
+ * @param user user that quit
+ * @param msg quit message, may be {@code null}
  */
-void handle_quit(User user, char[] channel, char[] msg)
+void handle_quit(User user, char[] msg)
 {
+	this.mods_invoke("quit", m -> m.on_quit(user, msg));
 }
 
 /**
- * @param msg part msg or {@code null}
+ * Called when a user parts a channel.
+ *
+ * @param user user that part the channel
+ * @param channel channel that the user left
+ * @param msg part message, may be {@code null}
  */
 void handle_part(User user, char[] channel, char[] msg)
 {
 	this.channel_remove_user(user.nick, channel);
+	this.mods_invoke("part", m -> m.on_part(user, channel, msg));
 }
 
 /**
- * @param msg kick msg or {@code null}
+ * Called when a user gets kicked from a channel.
+ *
+ * @param user user that did the kick action, may be {@code null}
+ * @param channel channel where the kick happened
+ * @param kickeduser the user that was kicked
+ * @param msg kick message, may be {@code null}
  */
 void handle_kick(User user, char[] channel, char[] kickeduser, char[] msg)
 {
 	this.channel_remove_user(kickeduser, channel);
+	this.mods_invoke("kick", m -> m.on_kick(user, channel, kickeduser, msg));
 }
 
+/**
+ * Called when a user changes their nick.
+ *
+ * @param user user that changed their nick (this has the old name)
+ * @param newnick the new nickname of this user
+ */
 void handle_nick(User user, char[] newnick)
 {
 	int i = this.joined_channels.size();
@@ -513,6 +542,7 @@ void handle_nick(User user, char[] newnick)
 			}
 		}
 	}
+	this.mods_invoke("nickchange", m -> m.on_nickchange(user, newnick));
 }
 
 /**
@@ -723,7 +753,7 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
  */
 void handle_message(User user, char[] target, char[] replytarget, char[] message)
 {
-	mods_invoke("message", m -> m.on_message(user, target, replytarget, message));
+	this.mods_invoke("message", m -> m.on_message(user, target, replytarget, message));
 }
 
 /**
@@ -737,7 +767,7 @@ void handle_message(User user, char[] target, char[] replytarget, char[] message
  */
 void handle_action(User user, char[] target, char[] replytarget, char[] action)
 {
-	mods_invoke("action", m -> m.on_action(user, target, replytarget, action));
+	this.mods_invoke("action", m -> m.on_action(user, target, replytarget, action));
 }
 
 /**
@@ -749,7 +779,7 @@ void handle_action(User user, char[] target, char[] replytarget, char[] action)
  */
 void handle_topic(User user, char[] channel, char[] topic)
 {
-	mods_invoke("topic", m -> m.on_topic(user, channel, topic));
+	this.mods_invoke("topic", m -> m.on_topic(user, channel, topic));
 }
 
 /**
@@ -762,7 +792,7 @@ void handle_topic(User user, char[] channel, char[] topic)
  */
 void handle_usermodechange(ChannelImpl chan, ChannelUser user, char sign, char mode)
 {
-	mods_invoke("usermodechange", m -> m.on_usermodechange(chan, user, sign, mode));
+	this.mods_invoke("usermodechange", m -> m.on_usermodechange(chan, user, sign, mode));
 }
 
 /**

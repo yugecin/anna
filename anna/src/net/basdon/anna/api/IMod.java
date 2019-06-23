@@ -20,7 +20,7 @@ String getVersion();
 String getDescription();
 /**
  * Will be called when the stats server has been hit and wants latest and greatest stats. Print
- * stats into passed {@code output}, preferrable each line indented with two spaces and ending with
+ * stats into passed {@code output}, preferrable each line indented with one space and ending with
  * LF.
  */
 void print_stats(IAnna.Output output)
@@ -97,6 +97,59 @@ void on_topic(User user, char[] channel, char[] topic)
  */
 default
 void on_usermodechange(Channel chan, ChannelUser user, char sign, char mode)
+{
+}
+/**
+ * Called when a user changes their nick.
+ *
+ * @param user user that changed their nick (this has the old name)
+ * @param newnick the new nickname of this user
+ */
+default
+void on_nickchange(User user, char[] newnick)
+{
+}
+/**
+ * Called when a user gets kicked from a channel.
+ *
+ * @param user user that did the kick action, may be {@code null}
+ * @param channel channel where the kick happened
+ * @param kickeduser the user that was kicked
+ * @param msg kick message, may be {@code null}
+ */
+default
+void on_kick(User user, char[] channel, char[] kickeduser, char[] msg)
+{
+}
+/**
+ * Called when a user parts a channel.
+ *
+ * @param user user that part the channel
+ * @param channel channel that the user left
+ * @param msg part message, may be {@code null}
+ */
+default
+void on_part(User user, char[] channel, char[] msg)
+{
+}
+/**
+ * Called when a user quits.
+ *
+ * @param user user that quit
+ * @param msg quit message, may be {@code null}
+ */
+default
+void on_quit(User user, char[] msg)
+{
+}
+/**
+ * Called when a user joins a channel.
+ *
+ * @param user user that joined a channel
+ * @param channel the channel they joined
+ */
+default
+void on_join(User user, char[] channel)
 {
 }
 }
