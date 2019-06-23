@@ -2,15 +2,13 @@
 // see the LICENSE file for more details
 package net.basdon.anna.internal;
 
-public class ChannelUser
+import net.basdon.anna.api.ChannelUser;
+
+class ChannelUserImpl extends ChannelUser
 {
 static int maxmodes;
 
-char[] nick;
-int modec;
-char[] modev;
-
-ChannelUser(char[] nick)
+ChannelUserImpl(char[] nick)
 {
 	this.nick = nick;
 	this.modev = new char[maxmodes];

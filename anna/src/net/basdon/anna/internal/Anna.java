@@ -19,6 +19,7 @@ import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import net.basdon.anna.api.ChannelUser;
 import net.basdon.anna.api.Config;
 import net.basdon.anna.api.IAnna;
 import net.basdon.anna.api.IMod;
@@ -72,7 +73,7 @@ static
 
 private final ArrayList<IMod> mods;
 private final HashMap<IMod, File> modfile;
-private final ArrayList<Channel> joined_channels;
+private final ArrayList<ChannelImpl> joined_channels;
 private final LinkedList<BufferedUserModeChange> usermode_updates;
 
 private boolean connection_state;
@@ -217,7 +218,7 @@ void connecting()
 	this.prefixes = PREFIXES_DEFAULT;
 	this.modes = MODES_DEFAULT;
 	this.chanmodes_a = this.chanmodes_b = this.chanmodes_c = this.chanmodes_d = EMPTY_CHAR_ARR;
-	ChannelUser.maxmodes = this.modes.length;
+	ChannelUserImpl.maxmodes = this.modes.length;
 }
 
 void shutdown()
@@ -258,7 +259,7 @@ void isupport(int paramc, char[][] paramv)
 						this.modes[i] = p[modestart + i];
 						this.prefixes[i] = p[prefixstart + i];
 					}
-					ChannelUser.maxmodes = this.modes.length;
+					ChannelUserImpl.maxmodes = this.modes.length;
 				}
 			}
 		}
@@ -354,7 +355,7 @@ void dispatch_message(Message msg)
 	if (strcmp(msg.cmd, CMD_MODE) && msg.prefix != null && msg.paramc > 0) {
 		char[] target = msg.paramv[0];
 		if (target[0] == '#') {
-			Channel chan = this.channel_find(target);
+			ChannelImpl chan = this.channel_find(target);
 			if (chan != null) {
 				if (msg.paramc > 1) {
 					chan.mode_changed(this, msg.paramv, msg.paramc);
@@ -408,7 +409,7 @@ void dispatch_message(Message msg)
 
 	// <- :server 353 Anna^ = #anna :Anna^ @robin_be
 	if (msg.cmdnum == RPL_NAMREPLY  && msg.trailing_param) {
-		Channel chan = this.channel_find(msg.paramv[msg.paramc - 2]);
+		ChannelImpl chan = this.channel_find(msg.paramv[msg.paramc - 2]);
 		if (chan == null) {
 			Log.warn("got NAMES reply for channel that is not registered");
 			return;
@@ -434,7 +435,7 @@ void dispatch_message(Message msg)
 			int len = nextoffset - off;
 			nick = new char[len];
 			arraycopy(users, off, nick, 0, len);
-			ChannelUser usr = chan.get_or_add_user(nick);
+			ChannelUserImpl usr = chan.get_or_add_user(nick);
 			if (mode != 0) {
 				usr.mode_add(mode);
 			}
@@ -463,15 +464,15 @@ void handle_join(User user, char[] channel)
 {
 	if (strcmp(user.nick, me.nick)) {
 		this.channel_unregister(channel);
-		Channel chan = new Channel(channel);
+		ChannelImpl chan = new ChannelImpl(channel);
 		this.joined_channels.add(chan);
 		// do not add own user, namelist will handle that
 		return;
 	}
 
-	Channel chan = this.channel_find(channel);
+	ChannelImpl chan = this.channel_find(channel);
 	if (chan != null) {
-		chan.userlist.add(new ChannelUser(user.nick));
+		chan.userlist.add(new ChannelUserImpl(user.nick));
 	}
 }
 
@@ -502,7 +503,7 @@ void handle_nick(User user, char[] newnick)
 {
 	int i = this.joined_channels.size();
 	while (i-- > 0) {
-		Channel chan = this.joined_channels.get(i);
+		ChannelImpl chan = this.joined_channels.get(i);
 		int j = chan.userlist.size();
 		while (j-- > 0) {
 			ChannelUser usr = chan.userlist.get(j);
@@ -599,7 +600,7 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 	}
 
 	if (strcmp(cmd, 'u','s','e','r','s') && params != null && is_owner(user)) {
-		Channel chan = this.channel_find(params);
+		ChannelImpl chan = this.channel_find(params);
 		if (chan == null) {
 			this.privmsg(replytarget, "I'm not in that channel".toCharArray());
 			return;
@@ -662,6 +663,7 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 			return;
 		}
 		mod_load(params, replytarget);
+		return;
 	}
 
 	if (strcmp(cmd, 'u','n','l','o','a','d','m','o','d') && is_owner(user)) {
@@ -670,6 +672,7 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 			return;
 		}
 		mod_unload(params, replytarget);
+		return;
 	}
 
 	if (strcmp(cmd, 'r','e','l','o','a','d','m','o','d') && is_owner(user)) {
@@ -679,6 +682,7 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 		}
 		mod_unload(params, replytarget);
 		mod_load(params, replytarget);
+		return;
 	}
 
 	if (strcmp(cmd, 'm','o','d','i','n','f','o') && is_owner(user)) {
@@ -698,34 +702,67 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 		this.privmsg(replytarget, "mod not loaded".toCharArray());
 		return;
 	}
+
+	for (IMod mod : this.mods) {
+		try {
+			mod.on_command(user, target, replytarget, cmd, params);
+		} catch (Throwable t) {
+			Log.error("issue while invoking command on mod " + mod.getName(), t);
+		}
+	}
 }
 
 /**
- * it's a channel message if {@code target == replytarget}
- * @param user user that sent the message or {@code null}
- * @param target target message was sent to, either a channel or anna user
- * @param replytarget target to send a reply to, either a channel or user that send the command
+ * Called when a message is received (commands excluded). May be channel or private.
+ * It's a channel message if {@code target == replytarget}.
+ *
+ * @param user user that sent the message, may be {@code null}
+ * @param target place where the message was sent to, channel or anna user if PM
+ * @param replytarget target to reply to, channel or sending user if PM
+ * @param message message that was sent
  */
 void handle_message(User user, char[] target, char[] replytarget, char[] message)
 {
+	mods_invoke("message", m -> m.on_message(user, target, replytarget, message));
 }
 
 /**
- * it's a channel message if {@code target == replytarget}
- * @param user user that sent the action or {@code null}
- * @param target target message was sent to, either a channel or anna user
- * @param replytarget target to send a reply to, either a channel or user that send the command
+ * Called when an action message is received. May be channel or private.
+ * It's a channel message if {@code target == replytarget}.
+ *
+ * @param user user that sent the action, may be {@code null}
+ * @param target place where the action was sent to, channel or anna user if PM
+ * @param replytarget target to reply to, channel or sending user if PM
+ * @param action action that was sent
  */
 void handle_action(User user, char[] target, char[] replytarget, char[] action)
 {
+	mods_invoke("action", m -> m.on_action(user, target, replytarget, action));
 }
 
+/**
+ * Called when a topic has been changed.
+ *
+ * @param user user that changed the topic, may be {@code null}
+ * @param channel channel that had its topic changed
+ * @param topic the new topic
+ */
 void handle_topic(User user, char[] channel, char[] topic)
 {
+	mods_invoke("topic", m -> m.on_topic(user, channel, topic));
 }
 
-void handle_usermodechange(Channel chan, ChannelUser user, char sign, char mode)
+/**
+ * Called when a user's (channel) mode has been changed.
+ *
+ * @param chan affecting channel
+ * @param user user which
+ * @param sign
+ * @param mode
+ */
+void handle_usermodechange(ChannelImpl chan, ChannelUser user, char sign, char mode)
 {
+	mods_invoke("usermodechange", m -> m.on_usermodechange(chan, user, sign, mode));
 }
 
 /**
@@ -796,7 +833,7 @@ void mod_load(char[] modname, char[] replytarget)
 				);
 				return;
 			}
-			if (!Boolean.TRUE.equals(mod_invoke(mod, "enable", mod::onEnable))) {
+			if (!Boolean.TRUE.equals(mod_invoke(mod, "enable", mod::on_enable))) {
 				this.privmsg(replytarget, "mod failed to enable".toCharArray());
 				return;
 			}
@@ -840,7 +877,7 @@ void mod_disable(IMod[] mods)
 		mods[i] = null;
 		File modfile = this.modfile.get(mod);
 		this.modfile.remove(mod);
-		mod_invoke(mod, "disable", mod::onDisable);
+		mod_invoke(mod, "disable", mod::on_disable);
 		ClassLoader cl = mod.getClass().getClassLoader();
 		if (cl instanceof URLClassLoader) {
 			mod = null; // remove last (hopefully) reference before closing
@@ -894,11 +931,11 @@ void mods_invoke(String target, Consumer<IMod> invoker)
 /**
  * @return channel or {@code null}
  */
-Channel channel_find(char[] channel)
+ChannelImpl channel_find(char[] channel)
 {
 	int i = this.joined_channels.size();
 	while (i-- > 0) {
-		Channel chan = this.joined_channels.get(i);
+		ChannelImpl chan = this.joined_channels.get(i);
 		if (strcmp(channel, chan.name)) {
 			return chan;
 		}
@@ -924,7 +961,7 @@ void channel_remove_user(char[] user, char[] channel)
 		return;
 	}
 
-	Channel chan = this.channel_find(channel);
+	ChannelImpl chan = this.channel_find(channel);
 	if (chan != null) {
 		int i = chan.userlist.size();
 		while (i-- > 0) {
@@ -1036,7 +1073,7 @@ void log_warn(String message)
 static
 class BufferedUserModeChange
 {
-Channel chan;
+ChannelImpl chan;
 /**
  * amount of elements in {@code userv}, {@code signs} and {@code modes}
  */
@@ -1045,7 +1082,7 @@ ChannelUser[] userv;
 char[] signs;
 char[] modes;
 
-BufferedUserModeChange(Channel chan, int maxc)
+BufferedUserModeChange(ChannelImpl chan, int maxc)
 {
 	this.chan = chan;
 	this.userv = new ChannelUser[maxc];

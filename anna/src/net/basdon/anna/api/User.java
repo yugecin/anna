@@ -39,6 +39,15 @@ User parse(char[] user, int from, int to)
 	return u;
 }
 
+private static
+boolean match(char[] a, char[] b)
+{
+	return
+		(a == null && b == null) ||
+		(a != null && a.length == 1 && a[0] == '*') ||
+		strcmp(a, b);
+}
+
 public char[] nick;
 /**
  * name or {@code null} if not present
@@ -52,12 +61,12 @@ boolean matches(User o)
 	return match(this.nick, o.nick) && match(this.name, o.name) && match(this.host, o.host); 
 }
 
-private static
-boolean match(char[] a, char[] b)
+@Override
+public String toString()
 {
-	return
-		(a == null && b == null) ||
-		(a != null && a.length == 1 && a[0] == '*') ||
-		strcmp(a, b);
+	if (this.name == null) {
+		return new String(name) + "@" + new String(host);
+	}
+	return new String(name) + "!" + new String(name) + "@" + new String(host);
 }
 }

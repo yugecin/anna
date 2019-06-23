@@ -2,34 +2,31 @@
 // see the LICENSE file for more details
 package net.basdon.anna.internal;
 
-import java.util.ArrayList;
+import net.basdon.anna.api.Channel;
+import net.basdon.anna.api.ChannelUser;
 
 import static java.lang.System.arraycopy;
 import static net.basdon.anna.api.Util.*;
 
-public class Channel
+class ChannelImpl extends Channel
 {
-final char[] name;
-final ArrayList<ChannelUser> userlist;
-
-Channel(char[] name)
+ChannelImpl(char[] name)
 {
-	this.name = name;
-	this.userlist = new ArrayList<>();
+	super(name);
 }
 
-ChannelUser get_or_add_user(char[] nick)
+ChannelUserImpl get_or_add_user(char[] nick)
 {
 	int i = this.userlist.size();
 	while (i-- > 0) {
 		ChannelUser usr = this.userlist.get(i);
 		if (strcmp(nick, usr.nick)) {
-			return usr;
+			return (ChannelUserImpl) usr;
 		}
 	}
-	ChannelUser usr = new ChannelUser(nick);
+	ChannelUser usr = new ChannelUserImpl(nick);
 	this.userlist.add(usr);
-	return usr;
+	return (ChannelUserImpl) usr;
 }
 
 /**
@@ -74,7 +71,8 @@ void mode_changed(Anna anna, char[][] paramv, int paramc)
 				paramidx++;
 				int j = this.userlist.size();
 				while (j-- > 0) {
-					ChannelUser usr = this.userlist.get(j);
+					ChannelUserImpl usr;
+					usr = (ChannelUserImpl) this.userlist.get(j);
 					if (strcmp(nick, usr.nick)) {
 						if (sign == '-') {
 							usr.mode_remove(c);
