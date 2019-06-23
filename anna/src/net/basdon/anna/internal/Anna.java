@@ -2,11 +2,17 @@
 // see the LICENSE file for more details
 package net.basdon.anna.internal;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Properties;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import net.basdon.anna.api.Config;
 import net.basdon.anna.api.IAnna;
@@ -21,6 +27,7 @@ import static net.basdon.anna.api.Util.*;
 class Anna implements IAnna
 {
 static final Properties default_config;
+static final ClassLoader parent_loader = IMod.class.getClassLoader();
 
 /**
  * {@link https://tools.ietf.org/html/draft-brocklesby-irc-isupport-03#section-3.14}
@@ -57,6 +64,7 @@ static
 	default_config.put("owners", "robin_be!*@cyber.space");
 }
 
+private final ArrayList<IMod> mods;
 private final ArrayList<Channel> joined_channels;
 private final LinkedList<BufferedUserModeChange> usermode_updates;
 
@@ -86,6 +94,7 @@ Anna(Config conf)
 {
 	this.time_start = this.time_disconnect = System.currentTimeMillis();
 	this.conf = conf;
+	this.mods = new ArrayList<>();
 	this.joined_channels = new ArrayList<>();
 	this.usermode_updates = new LinkedList<>();
 
@@ -179,6 +188,18 @@ void connecting()
 	this.modes = MODES_DEFAULT;
 	this.chanmodes_a = this.chanmodes_b = this.chanmodes_c = this.chanmodes_d = EMPTY_CHAR_ARR;
 	ChannelUser.maxmodes = this.modes.length;
+}
+
+void shutdown()
+{
+	Iterator<IMod> iter = this.mods.iterator();
+	while (iter.hasNext()) {
+		IMod mod = iter.next();
+		iter.remove();
+		IMod[] mods = { mod };
+		mod = null; // remove last (hopefully) reference
+		mod_disable(mods);
+	}
 }
 
 /**
@@ -604,6 +625,49 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 		this.privmsg(replytarget, "stats server is dead".toCharArray());
 		return;
 	}
+
+	if (strcmp(cmd, 'l','o','a','d','m','o','d') && is_owner(user)) {
+		if (params == null) {
+			this.privmsg(replytarget, "specify mod_name".toCharArray());
+			return;
+		}
+		mod_load(params, replytarget);
+	}
+
+	if (strcmp(cmd, 'u','n','l','o','a','d','m','o','d') && is_owner(user)) {
+		if (params == null) {
+			this.privmsg(replytarget, "specify mod_name".toCharArray());
+			return;
+		}
+		mod_unload(params, replytarget);
+	}
+
+	if (strcmp(cmd, 'r','e','l','o','a','d','m','o','d') && is_owner(user)) {
+		if (params == null) {
+			this.privmsg(replytarget, "specify mod_name".toCharArray());
+			return;
+		}
+		mod_unload(params, replytarget);
+		mod_load(params, replytarget);
+	}
+
+	if (strcmp(cmd, 'm','o','d','i','n','f','o') && is_owner(user)) {
+		if (params == null) {
+			this.privmsg(replytarget, "specify mod_name".toCharArray());
+			return;
+		}
+		String modname = new String(params);
+		for (IMod mod : this.mods) {
+			if (modname.equals(mod.getName())) {
+				String m;
+				m = modname + " v" + mod.getVersion() + ": " + mod.getDescription();
+				this.privmsg(replytarget, m.toCharArray());
+				return;
+			}
+		}
+		this.privmsg(replytarget, "mod not loaded".toCharArray());
+		return;
+	}
 }
 
 /**
@@ -632,6 +696,141 @@ void handle_topic(User user, char[] channel, char[] topic)
 
 void handle_usermodechange(Channel chan, ChannelUser user, char sign, char mode)
 {
+}
+
+/**
+ * @param replytarget target to send messages to, may be {@null}
+ */
+private
+void mod_unload(char[] modname, char[] replytarget)
+{
+	String modnamestr = new String(modname);
+	IMod mod = null;
+	Iterator<IMod> iter = this.mods.iterator();
+	while (iter.hasNext()) {
+		IMod m = iter.next();
+		if (modnamestr.equals(m.getName())) {
+			mod = m;
+			iter.remove();
+			break;
+		}
+	}
+	if (mod == null) {
+		this.privmsg(replytarget, "mod is not loaded".toCharArray());
+		return;
+	}
+	IMod[] mods = { mod };
+	mod = null; // remove last (hopefully) reference
+	mod_disable(mods);
+	this.privmsg(replytarget, "unloaded".toCharArray());
+}
+
+/**
+ * @param replytarget target to send messages to, may be {@null}
+ */
+private
+void mod_load(char[] modname, char[] replytarget)
+{
+	String modnamestr = new String(modname);
+	File modfile = new File(modnamestr + ".jar");
+	if (!modfile.exists() || !modfile.isFile()) {
+		this.privmsg(replytarget, (modnamestr + ".jar not found").toCharArray());
+		return;
+	}
+	try {
+		URLClassLoader cl = null;
+		try {
+			URL[] urls = { modfile.toPath().toUri().toURL() };
+			cl = new URLClassLoader(urls, parent_loader);
+			Class<?> modclass = Class.forName("annamod.Mod", true, cl);
+			IMod mod = (IMod) modclass.newInstance();
+			if (!modnamestr.equals(mod.getName())) {
+				this.privmsg(
+					replytarget,
+					("name mismatch (" + mod.getName() + ")").toCharArray()
+				);
+				return;
+			}
+			if (!Boolean.TRUE.equals(mod_invoke(mod, "enable", mod::onEnable))) {
+				this.privmsg(replytarget, "mod failed to enable".toCharArray());
+				return;
+			}
+			cl = null; // null to prevent close in finally block
+			this.mods.add(mod);
+			String msg = "loaded " + mod.getName() + " v" + mod.getVersion();
+			this.privmsg(replytarget, msg.toCharArray());
+		} catch (MalformedURLException e) {
+			this.privmsg(replytarget, "failed, check log".toCharArray());
+			throw e;
+		} catch (ClassNotFoundException e) {
+			this.privmsg(replytarget, "invalid mod".toCharArray());
+			throw e;
+		} catch (ReflectiveOperationException e) {
+			this.privmsg(replytarget, "could not instantiate mod".toCharArray());
+			throw e;
+		} catch (ClassCastException e) {
+			this.privmsg(replytarget, "not an IMod".toCharArray());
+			throw e;
+		} catch (Throwable t) {
+			this.privmsg(replytarget, "uncaught error, check log".toCharArray());
+			throw t;
+		} finally {
+			close(cl);
+		}
+	} catch (Throwable t) {
+		Log.error("failed to load mod " + modnamestr, t);
+	}
+}
+
+/**
+ * @param mods array of {@link IMod} to disable. Passed as an array to be able te remove local
+ *        variable references.
+ */
+void mod_disable(IMod[] mods)
+{
+	for (int i = 0; i < mods.length; i++) {
+		IMod mod = mods[i];
+		mods[i] = null;
+		mod_invoke(mod, "disable", mod::onDisable);
+		ClassLoader cl = mod.getClass().getClassLoader();
+		if (cl instanceof URLClassLoader) {
+			mod = null; // remove last (hopefully) reference before closing
+			close((URLClassLoader) cl);
+		} else {
+			Log.warn("mod " + mod.getName() + " classloader is not URLClassLoader");
+		}
+	}
+}
+
+void mod_invoke(IMod mod, String target, Runnable invoker)
+{
+	try {
+		invoker.run();
+	} catch (Throwable t) {
+		Log.error("issue while invoking " + target + " on mod " + mod.getName(), t);
+	}
+}
+
+<T>
+T mod_invoke(IMod mod, String target, Supplier<T> invoker)
+{
+	try {
+		return invoker.get();
+	} catch (Throwable t) {
+		Log.error("issue while invoking " + target + " on mod " + mod.getName(), t);
+	}
+	return null;
+}
+
+void mods_invoke(String target, Consumer<IMod> invoker)
+{
+	for (IMod mod : this.mods) {
+		try {
+			invoker.accept(mod);
+		} catch (Throwable t) {
+			Log.error("issue while invoking " + target + " on mod " + mod.getName(), t);
+		}
+	}
 }
 
 /**

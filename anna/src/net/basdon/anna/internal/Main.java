@@ -117,6 +117,8 @@ int main()
 		} catch (InterruptedException e) {
 		}
 	}
+
+	anna.shutdown();
 	return 0;
 }
 
