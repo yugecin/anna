@@ -7,10 +7,15 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Properties;
+import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -28,6 +33,7 @@ class Anna implements IAnna
 {
 static final Properties default_config;
 static final ClassLoader parent_loader = IMod.class.getClassLoader();
+static final Random rng = new Random();
 
 /**
  * {@link https://tools.ietf.org/html/draft-brocklesby-irc-isupport-03#section-3.14}
@@ -65,6 +71,7 @@ static
 }
 
 private final ArrayList<IMod> mods;
+private final HashMap<IMod, File> modfile;
 private final ArrayList<Channel> joined_channels;
 private final LinkedList<BufferedUserModeChange> usermode_updates;
 
@@ -95,6 +102,7 @@ Anna(Config conf)
 	this.time_start = this.time_disconnect = System.currentTimeMillis();
 	this.conf = conf;
 	this.mods = new ArrayList<>();
+	this.modfile = new HashMap<>();
 	this.joined_channels = new ArrayList<>();
 	this.usermode_updates = new LinkedList<>();
 
@@ -732,15 +740,30 @@ private
 void mod_load(char[] modname, char[] replytarget)
 {
 	String modnamestr = new String(modname);
-	File modfile = new File(modnamestr + ".jar");
+	File modfile = new File(modnamestr + ".jar").getAbsoluteFile();
 	if (!modfile.exists() || !modfile.isFile()) {
 		this.privmsg(replytarget, (modnamestr + ".jar not found").toCharArray());
 		return;
 	}
+	String rand = String.valueOf(rng.nextInt() & 0xffff);
+	Path parent = modfile.toPath().getParent();
+	if (parent == null) {
+		this.privmsg(replytarget, "failed to get parent dir".toCharArray());
+		return;
+	}
+	Path np = parent.resolve(".tmp-" + modnamestr + "-" + rand);
+	try {
+		Files.copy(modfile.toPath(), np, StandardCopyOption.REPLACE_EXISTING);
+	} catch (IOException e) {
+		this.privmsg(replytarget, "failed to create copy".toCharArray());
+		return;
+	}
+	File nf = np.toFile();
+	nf.deleteOnExit();
 	try {
 		URLClassLoader cl = null;
 		try {
-			URL[] urls = { modfile.toPath().toUri().toURL() };
+			URL[] urls = { np.toUri().toURL() };
 			cl = new URLClassLoader(urls, parent_loader);
 			Class<?> modclass = Class.forName("annamod.Mod", true, cl);
 			IMod mod = (IMod) modclass.newInstance();
@@ -757,6 +780,7 @@ void mod_load(char[] modname, char[] replytarget)
 			}
 			cl = null; // null to prevent close in finally block
 			this.mods.add(mod);
+			this.modfile.put(mod, nf);
 			String msg = "loaded " + mod.getName() + " v" + mod.getVersion();
 			this.privmsg(replytarget, msg.toCharArray());
 		} catch (MalformedURLException e) {
@@ -791,6 +815,8 @@ void mod_disable(IMod[] mods)
 	for (int i = 0; i < mods.length; i++) {
 		IMod mod = mods[i];
 		mods[i] = null;
+		File modfile = this.modfile.get(mod);
+		this.modfile.remove(mod);
 		mod_invoke(mod, "disable", mod::onDisable);
 		ClassLoader cl = mod.getClass().getClassLoader();
 		if (cl instanceof URLClassLoader) {
@@ -798,6 +824,9 @@ void mod_disable(IMod[] mods)
 			close((URLClassLoader) cl);
 		} else {
 			Log.warn("mod " + mod.getName() + " classloader is not URLClassLoader");
+		}
+		if (!modfile.delete()) {
+			Log.warn("could not remove temp mod file " + modfile.getName());
 		}
 	}
 }
