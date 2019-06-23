@@ -2,6 +2,7 @@
 // see the LICENSE file for more details
 package net.basdon.anna.api;
 
+import java.io.IOException;
 import java.util.Properties;
 
 public interface IAnna
@@ -37,4 +38,18 @@ void send_raw(char[] buf, int offset, int len);
 void log_error(Throwable t, String message);
 void log_error(String message);
 void log_warn(String message);
+
+interface Output
+{
+default
+void print(String msg)
+throws IOException
+{
+	char[] chars = msg.toCharArray();
+	this.print(chars, 0, chars.length);
+}
+
+void print(char[] buf, int offset, int len)
+throws IOException;
+} /*Output*/
 }

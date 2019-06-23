@@ -78,6 +78,7 @@ private final LinkedList<BufferedUserModeChange> usermode_updates;
 private boolean connection_state;
 private long time_start, time_connect, time_disconnect;
 private int disconnects;
+private int mod_loadcount, mod_unloadcount;
 private StatsServer stats_server;
 private char command_prefix;
 private User[] owners;
@@ -184,7 +185,28 @@ throws IOException
 		out.print(" disconnects since boot: " + disconnects + "\n");
 		out.print(" bytes recv: " + Main.recv + "\n");
 		out.print(" bytes sent: " + Main.sent + "\n");
+		out.print(" mods load/unload counts: ");
+		out.print(this.mod_loadcount + "/" + this.mod_unloadcount + "\n");
+		out.print(" mods loaded now: " + this.mods.size() + "\n");
 		out.print("\n");
+		for (IMod mod : this.mods) {
+			out.print(mod.getName() + "\n");
+			final IOException[] ex = { null };
+			boolean res = mod_invoke(mod, "print_stats", () -> {
+				try {
+					mod.print_stats(out);
+				} catch (IOException e) {
+					ex[0] = e;
+				}
+			});
+			if (ex[0] != null) {
+				throw ex[0];
+			}
+			if (!res) {
+				out.print("  anna: something broke\n");
+			}
+			out.print("\n");
+		}
 	}
 }
 
@@ -783,6 +805,7 @@ void mod_load(char[] modname, char[] replytarget)
 			this.modfile.put(mod, nf);
 			String msg = "loaded " + mod.getName() + " v" + mod.getVersion();
 			this.privmsg(replytarget, msg.toCharArray());
+			this.mod_loadcount++;
 		} catch (MalformedURLException e) {
 			this.privmsg(replytarget, "failed, check log".toCharArray());
 			throw e;
@@ -828,15 +851,21 @@ void mod_disable(IMod[] mods)
 		if (!modfile.delete()) {
 			Log.warn("could not remove temp mod file " + modfile.getName());
 		}
+		this.mod_unloadcount++;
 	}
 }
 
-void mod_invoke(IMod mod, String target, Runnable invoker)
+/**
+ * @return {@code false} if something broke
+ */
+boolean mod_invoke(IMod mod, String target, Runnable invoker)
 {
 	try {
 		invoker.run();
+		return true;
 	} catch (Throwable t) {
 		Log.error("issue while invoking " + target + " on mod " + mod.getName(), t);
+		return false;
 	}
 }
 
@@ -1046,18 +1075,4 @@ static
 class RestartException extends RuntimeException
 {
 } /*RestartException*/
-
-interface Output
-{
-default
-void print(String msg)
-throws IOException
-{
-	char[] chars = msg.toCharArray();
-	this.print(chars, 0, chars.length);
-}
-
-void print(char[] buf, int offset, int len)
-throws IOException;
-} /*Output*/
 } /*Anna*/

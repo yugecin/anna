@@ -2,6 +2,8 @@
 // see the LICENSE file for more details
 package net.basdon.anna.api;
 
+import java.io.IOException;
+
 public interface IMod
 {
 /**
@@ -26,4 +28,11 @@ boolean onEnable();
  * Remember to unregister every registered listeners etc.
  */
 void onDisable();
+/**
+ * Will be called when the stats server has been hit and wants latest and greatest stats. Print
+ * stats into passed {@code output}, preferrable each line indented with two spaces and ending with
+ * LF.
+ */
+void print_stats(IAnna.Output output)
+throws IOException;
 }
