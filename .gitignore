@@ -2,3 +2,5 @@
 config/**
 out/**
 !out/.gitkeep
+**/.classpath
+**/.project
