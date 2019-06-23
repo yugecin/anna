@@ -186,6 +186,25 @@ throws IOException
 		out.print(" disconnects since boot: " + disconnects + "\n");
 		out.print(" bytes recv: " + Main.recv + "\n");
 		out.print(" bytes sent: " + Main.sent + "\n");
+		out.print(" active channels and users:\n");
+		int i = this.joined_channels.size();
+		while (i-- > 0) {
+			out.print("  ");
+			ChannelImpl chan = this.joined_channels.get(i);
+			out.print(chan.name, 0, chan.name.length);
+			out.print(":");
+			int j = chan.userlist.size();
+			while (j-- > 0) {
+				out.print(" ");
+				ChannelUser usr = chan.userlist.get(j);
+				int prefixidx = this.user_get_highest_mode_idx(usr);
+				if (prefixidx != this.modes.length) {
+					out.print(this.prefixes, prefixidx, 1);
+				}
+				out.print(usr.nick, 0, usr.nick.length);
+			}
+			out.print("\n");
+		}
 		out.print(" mods load/unload counts: ");
 		out.print(this.mod_loadcount + "/" + this.mod_unloadcount + "\n");
 		out.print(" mods loaded now: " + this.mods.size() + "\n");
@@ -641,14 +660,7 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 		while (i-- > 0) {
 			sb.append(' ');
 			ChannelUser usr = chan.userlist.get(i);
-			int prefixidx = this.modes.length;
-			int modei = usr.modec;
-			while (modei-- > 0) {
-				int idx = array_idx(this.modes, usr.modev[modei]);
-				if (idx != -1 && idx < prefixidx) {
-					prefixidx = idx;
-				}
-			}
+			int prefixidx = this.user_get_highest_mode_idx(usr);
 			if (prefixidx != this.modes.length) {
 				sb.append(this.prefixes[prefixidx]);
 			}
@@ -1002,6 +1014,35 @@ void channel_remove_user(char[] user, char[] channel)
 			}
 		}
 	}
+}
+
+@Override
+public
+char[] get_user_channel_modes()
+{
+	return this.modes;
+}
+
+@Override
+public
+char[] get_user_channel_prefixes()
+{
+	return this.modes;
+}
+
+@Override
+public
+int user_get_highest_mode_idx(ChannelUser usr)
+{
+	int prefixidx = this.modes.length;
+	int modei = usr.modec;
+	while (modei-- > 0) {
+		int idx = array_idx(this.modes, usr.modev[modei]);
+		if (idx != -1 && idx < prefixidx) {
+			prefixidx = idx;
+		}
+	}
+	return prefixidx;
 }
 
 @Override
