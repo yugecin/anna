@@ -57,7 +57,7 @@ void on_message(User user, char[] target, char[] replytarget, char[] message)
  * @param target place where the message was sent to, channel or anna user if PM
  * @param replytarget target to reply to, channel or sending user if PM
  * @param cmd cmd that was invoked
- * @param params parameters of the cmd as one single string
+ * @param params parameters of the cmd as one single string, may be {@code null}
  * @return {@code true} if the command was handled (this value is currently unused)
  */
 default

@@ -51,6 +51,10 @@ void privmsg(char[] target, char[] msg);
 /**
  * @param target may be {@code null}, msg will not be sent
  */
+void privmsg(char[] target, char[] msg, int offset, int len);
+/**
+ * @param target may be {@code null}, msg will not be sent
+ */
 void action(char[] target, char[] msg);
 /**
  * don't use for privmsg, use {@link #privmsg} or {@link action} for that

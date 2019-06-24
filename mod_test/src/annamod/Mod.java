@@ -78,7 +78,7 @@ boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, cha
 		new String(target),
 		new String(replytarget),
 		new String(cmd),
-		new String(params)
+		params == null ? "null" : new String(params)
 	);
 	return false;
 }

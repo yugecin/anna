@@ -1,6 +1,7 @@
-**.class
 config/**
-out/**
+**/bin/**
+**/bin-test/**
+**/out/**
 !out/.gitkeep
 **/.classpath
 **/.project

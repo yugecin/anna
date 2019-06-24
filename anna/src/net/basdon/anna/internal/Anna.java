@@ -1080,17 +1080,23 @@ boolean is_owner(User user)
 public
 void privmsg(char[] target, char[] text)
 {
+	this.privmsg(target, text, 0, text.length);
+}
+
+public
+void privmsg(char[] target, char[] text, int offset, int len)
+{
 	if (target == null) {
 		return;
 	}
-	char[] buf = new char[8 + target.length + 2 + text.length];
+	char[] buf = new char[8 + target.length + 2 + len];
 	int off = 0;
 	off = set(buf, off, "PRIVMSG ".toCharArray());
 	arraycopy(target, 0, buf, off, target.length);
 	off += target.length;
 	buf[off++] = ' ';
 	buf[off++] = ':';
-	arraycopy(text, 0, buf, off, text.length);
+	arraycopy(text, offset, buf, off, len);
 	send_raw(buf, 0, buf.length);
 }
 
