@@ -138,6 +138,7 @@ void do_figlet(char[] text, char[] target)
 
 int append_char(int x, int charindex, char[][] result)
 {
+	// TODO: pli plg plig doesn't output anything
 	int start = 0;
 	for (int i = charindex - 1; i >= 0; i--) {
 		start += charwidth[i] * charheight;
