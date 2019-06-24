@@ -846,6 +846,12 @@ private
 void mod_load(char[] modname, char[] replytarget)
 {
 	String modnamestr = new String(modname);
+	for (IMod m : this.mods) {
+		if (modnamestr.equals(m.getName())) {
+			this.privmsg(replytarget, "mod is already loaded!".toCharArray());
+			return;
+		}
+	}
 	File modfile = new File(modnamestr + ".jar").getAbsoluteFile();
 	if (!modfile.exists() || !modfile.isFile()) {
 		this.privmsg(replytarget, (modnamestr + ".jar not found").toCharArray());
