@@ -37,10 +37,28 @@ public static void main(String[] args) throws Exception
 Mod m;
 
 private
-void check_line(int[] len, char[][] result, int row, String line)
+void check(String str, String...expected)
 {
-	assertEquals(line.length(), len[row]);
-	assertEquals(line, new String(result[row], 0, len[row]));
+	char[][] result = new char[charheight][maxlen];
+	int len[] = m.do_figlet(result, str.toCharArray());
+	StringBuilder actual = new StringBuilder();
+	for (int i = 0; i < charheight; i++) {
+		if (len[i] > 0) {
+			actual.append(result[i], 0, len[i]).append("\n");
+		}
+	}
+	if (actual.length() > 0) {
+		actual.deleteCharAt(actual.length() - 1);
+	}
+	try {
+		assertEquals(String.join("\n", expected), actual.toString());
+	} catch (AssertionError e) {
+		System.err.println("expected:");
+		System.err.println(String.join("\n", expected));
+		System.err.println("actual:");
+		System.err.println(actual.toString());
+		throw e;
+	}
 }
 
 @Before
@@ -58,26 +76,28 @@ throws Exception
 public
 void test_like_this()
 {
-	char[][] result = new char[charheight][maxlen];
-	int len[] = m.do_figlet(result, "like this.".toCharArray());
-	check_line(len, result, 0, " _ _ _            _   _     _");
-	check_line(len, result, 1, "| (_) | _____    | |_| |__ (_)___");
-	check_line(len, result, 2, "| | | |/ / _ \\   | __| '_ \\| / __|");
-	check_line(len, result, 3, "| | |   <  __/   | |_| | | | \\__ \\_");
-	check_line(len, result, 4, "|_|_|_|\\_\\___|    \\__|_| |_|_|___(_)");
+	check(
+		"like this.",
+		" _ _ _            _   _     _",
+		"| (_) | _____    | |_| |__ (_)___",
+		"| | | |/ / _ \\   | __| '_ \\| / __|",
+		"| | |   <  __/   | |_| | | | \\__ \\_",
+		"|_|_|_|\\_\\___|    \\__|_| |_|_|___(_)"
+	);
 }
 
 @Test
 public
 void test_hello_world()
 {
-	char[][] r = new char[charheight][maxlen];
-	int len[] = m.do_figlet(r, "Hello, world!".toCharArray());
-	check_line(len, r, 0, " _   _      _ _                               _     _ _");
-	check_line(len, r, 1, "| | | | ___| | | ___      __      _____  _ __| | __| | |");
-	check_line(len, r, 2, "| |_| |/ _ \\ | |/ _ \\     \\ \\ /\\ / / _ \\| '__| |/ _` | |");
-	check_line(len, r, 3, "|  _  |  __/ | | (_) |     \\ V  V / (_) | |  | | (_| |_|");
-	check_line(len, r, 4, "|_| |_|\\___|_|_|\\___( )     \\_/\\_/ \\___/|_|  |_|\\__,_(_)");
-	check_line(len, r, 5, "                    |/");
+	check(
+		"Hello, world!",
+		" _   _      _ _                               _     _ _",
+		"| | | | ___| | | ___      __      _____  _ __| | __| | |",
+		"| |_| |/ _ \\ | |/ _ \\     \\ \\ /\\ / / _ \\| '__| |/ _` | |",
+		"|  _  |  __/ | | (_) |     \\ V  V / (_) | |  | | (_| |_|",
+		"|_| |_|\\___|_|_|\\___( )     \\_/\\_/ \\___/|_|  |_|\\__,_(_)",
+		"                    |/"
+	);
 }
 }
