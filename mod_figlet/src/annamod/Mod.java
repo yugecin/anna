@@ -97,16 +97,11 @@ boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, cha
 			floodprotect++;
 		} else if (params != null && params.length > 0) {
 			char[][] result = new char[charheight][maxlen];
-			int x = this.do_figlet(result, params);
-			nextrow:
+			int[] len = this.do_figlet(result, params);
 			for (int i = 0; i < charheight; i++) {
-				int len = x;
-				while (result[i][len] <= ' ') {
-					if (--len == 0) {
-						continue nextrow;
-					}
+				if (len[i] > 0) {
+					this.anna.privmsg(replytarget, result[i], 0, len[i]);
 				}
-				this.anna.privmsg(replytarget, result[i], 0, len + 1);
 			}
 			this.nextinvoc = System.currentTimeMillis() + this.delay;
 			serves++;
@@ -139,8 +134,9 @@ boolean load_font()
  * @param text text to render
  * @return amount of characters filled horizontally (rows may have trailing whitespace)
  */
-int do_figlet(char[][] result, char[] text)
+int[] do_figlet(char[][] result, char[] text)
 {
+	int[] len = new int[charheight];
 	int x = 0;
 	int lastspace = 0;
 	for (int i = 0, l = text.length; i < l; i++) {
@@ -150,15 +146,15 @@ int do_figlet(char[][] result, char[] text)
 		if (c == 0) {
 			lastspace = 2;
 		}
-		x = this.append_char(x, c, lastspace == 0, result);
+		x = this.append_char(x, len, c, lastspace == 0, result);
 		if (--lastspace < 0) {
 			lastspace = 0;
 		}
 	}
-	return x;
+	return len;
 }
 
-int append_char(int x, int charindex, boolean do_overlap, char[][] result)
+int append_char(int x, int[] len, int charindex, boolean do_overlap, char[][] result)
 {
 	int start = 0;
 	for (int i = charindex - 1; i >= 0; i--) {
@@ -198,6 +194,9 @@ int append_char(int x, int charindex, boolean do_overlap, char[][] result)
 				b = a;
 			}
 			result[i][x] = b;
+			if (b != ' ') {
+				len[i] = x + 1;
+			}
 		}
 	}
 	return x + 1;

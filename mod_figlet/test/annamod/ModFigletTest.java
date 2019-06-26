@@ -4,7 +4,6 @@ package annamod;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.function.IntFunction;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -27,15 +26,22 @@ public static void main(String[] args) throws Exception
 		String line;
 		while ((line = in.readLine()) != null) {
 			char[][] result = new char[charheight][maxlen];
-			int len = m.do_figlet(result, line.toCharArray());
+			int[] len = m.do_figlet(result, line.toCharArray());
 			for (int i = 0; i < charheight; i++) {
-				System.out.println(new String(result[i], 0, len));
+				System.out.println(new String(result[i], 0, len[i]));
 			}
 		}
 	}
 }
 
 Mod m;
+
+private
+void check_line(int[] len, char[][] result, int row, String line)
+{
+	assertEquals(line.length(), len[row]);
+	assertEquals(line, new String(result[row], 0, len[row]));
+}
 
 @Before
 public
@@ -53,28 +59,25 @@ public
 void test_like_this()
 {
 	char[][] result = new char[charheight][maxlen];
-	int len = m.do_figlet(result, "like this.".toCharArray());
-	assertEquals(36, len);
-	assertEquals(" _ _ _            _   _     _       ", new String(result[0], 0, len));
-	assertEquals("| (_) | _____    | |_| |__ (_)___   ", new String(result[1], 0, len));
-	assertEquals("| | | |/ / _ \\   | __| '_ \\| / __|  ", new String(result[2], 0, len));
-	assertEquals("| | |   <  __/   | |_| | | | \\__ \\_ ", new String(result[3], 0, len));
-	assertEquals("|_|_|_|\\_\\___|    \\__|_| |_|_|___(_)", new String(result[4], 0, len));
+	int len[] = m.do_figlet(result, "like this.".toCharArray());
+	check_line(len, result, 0, " _ _ _            _   _     _");
+	check_line(len, result, 1, "| (_) | _____    | |_| |__ (_)___");
+	check_line(len, result, 2, "| | | |/ / _ \\   | __| '_ \\| / __|");
+	check_line(len, result, 3, "| | |   <  __/   | |_| | | | \\__ \\_");
+	check_line(len, result, 4, "|_|_|_|\\_\\___|    \\__|_| |_|_|___(_)");
 }
 
 @Test
 public
 void test_hello_world()
 {
-	char[][] result = new char[charheight][maxlen];
-	int len = m.do_figlet(result, "Hello, world!".toCharArray());
-	IntFunction<String> f = i -> new String(result[i], 0, len);
-	assertEquals(56, len);
-	assertEquals(" _   _      _ _                               _     _ _ ", f.apply(0));
-	assertEquals("| | | | ___| | | ___      __      _____  _ __| | __| | |", f.apply(1));
-	assertEquals("| |_| |/ _ \\ | |/ _ \\     \\ \\ /\\ / / _ \\| '__| |/ _` | |", f.apply(2));
-	assertEquals("|  _  |  __/ | | (_) |     \\ V  V / (_) | |  | | (_| |_|", f.apply(3));
-	assertEquals("|_| |_|\\___|_|_|\\___( )     \\_/\\_/ \\___/|_|  |_|\\__,_(_)", f.apply(4));
-	assertEquals("                    |/                                  ", f.apply(5));
+	char[][] r = new char[charheight][maxlen];
+	int len[] = m.do_figlet(r, "Hello, world!".toCharArray());
+	check_line(len, r, 0, " _   _      _ _                               _     _ _");
+	check_line(len, r, 1, "| | | | ___| | | ___      __      _____  _ __| | __| | |");
+	check_line(len, r, 2, "| |_| |/ _ \\ | |/ _ \\     \\ \\ /\\ / / _ \\| '__| |/ _` | |");
+	check_line(len, r, 3, "|  _  |  __/ | | (_) |     \\ V  V / (_) | |  | | (_| |_|");
+	check_line(len, r, 4, "|_| |_|\\___|_|_|\\___( )     \\_/\\_/ \\___/|_|  |_|\\__,_(_)");
+	check_line(len, r, 5, "                    |/");
 }
 }
