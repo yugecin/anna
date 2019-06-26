@@ -35,6 +35,7 @@ byte[] font;
 IAnna anna;
 long nextinvoc;
 int serves;
+int floodprotect;
 int delay = DEFAULT_DELAY;
 
 @Override
@@ -91,10 +92,10 @@ public
 boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, char[] params)
 {
 	if (strcmp(cmd, 'f','i','g','l','e','t')) {
-		if (params != null &&
-			params.length > 0 &&
-			this.nextinvoc < System.currentTimeMillis())
-		{
+		if (this.nextinvoc >= System.currentTimeMillis()) {
+			this.anna.privmsg(replytarget, "don't make me flood".toCharArray());
+			floodprotect++;
+		} else if (params != null && params.length > 0) {
 			char[][] result = new char[charheight][maxlen];
 			int x = this.do_figlet(result, params);
 			nextrow:
@@ -105,7 +106,7 @@ boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, cha
 						continue nextrow;
 					}
 				}
-				this.anna.privmsg(target, result[i], 0, len + 1);
+				this.anna.privmsg(replytarget, result[i], 0, len + 1);
 			}
 			this.nextinvoc = System.currentTimeMillis() + this.delay;
 			serves++;
