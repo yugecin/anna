@@ -141,43 +141,46 @@ boolean load_font()
 int do_figlet(char[][] result, char[] text)
 {
 	int x = 0;
+	int lastspace = 0;
 	for (int i = 0, l = text.length; i < l; i++) {
 		char c = text[i];
 		if(c < 32 || c > 136) c = 32;
 		c -= 32;
-		x = this.append_char(x, c, result);
+		if (c == 0) {
+			lastspace = 2;
+		}
+		x = this.append_char(x, c, lastspace == 0, result);
+		if (--lastspace < 0) {
+			lastspace = 0;
+		}
 	}
 	return x;
 }
 
-int append_char(int x, int charindex, char[][] result)
+int append_char(int x, int charindex, boolean do_overlap, char[][] result)
 {
 	int start = 0;
 	for (int i = charindex - 1; i >= 0; i--) {
 		start += charwidth[i] * charheight;
 	}
 	int cw = charwidth[charindex];
-	boolean allwhite = true;
 	boolean overlapped = false;
-	int tries = 0; // this should be done better maybe, maybe not?
-	x++;
-	do {
-		tries++;
-		x--;
-		if (x >= maxlen) {
-			break;
-		}
-		for (int i = 0; i < charheight; i++) {
-			char a = result[i][x];
-			char b = (char) this.font[start + cw * i];
-			if (b > ' ') {
-				allwhite = false;
+	if (do_overlap) {
+		x++;
+		do {
+			x--;
+			if (x >= maxlen) {
+				break;
 			}
-			if (a > ' ' && b > ' ') {
-				overlapped = true;
+			for (int i = 0; i < charheight; i++) {
+				char a = result[i][x];
+				char b = (char) this.font[start + cw * i];
+				if (a > ' ' && b > ' ') {
+					overlapped = true;
+				}
 			}
-		}
-	} while (tries < 3 && !allwhite && !overlapped && x > 0);
+		} while (!overlapped && x > 0);
+	}
 	x--;
 	for (int j = 0; j < cw; j++) {
 		if (x + 1 >= maxlen) {
