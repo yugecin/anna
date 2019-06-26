@@ -63,17 +63,7 @@ public boolean on_enable(IAnna anna)
 {
 	this.anna = anna;
 
-	try (InputStream in = Mod.class.getResourceAsStream("figletfont.txt")) {
-		this.font = new byte[3505];
-		int total = 0;
-		do {
-			int read = in.read(this.font, 0, this.font.length);
-			if (read == -1) {
-				throw new IOException("EOF");
-			}
-			total += read;
-		} while (total != this.font.length);
-	} catch (IOException e) {
+	if (!load_font()) {
 		return false;
 	}
 
@@ -105,7 +95,18 @@ boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, cha
 			params.length > 0 &&
 			this.nextinvoc < System.currentTimeMillis())
 		{
-			this.do_figlet(params, replytarget);
+			char[][] result = new char[charheight][maxlen];
+			int x = this.do_figlet(result, params);
+			nextrow:
+			for (int i = 0; i < charheight; i++) {
+				int len = x;
+				while (result[i][len] <= ' ') {
+					if (--len == 0) {
+						continue nextrow;
+					}
+				}
+				this.anna.privmsg(target, result[i], 0, len + 1);
+			}
 			this.nextinvoc = System.currentTimeMillis() + this.delay;
 			serves++;
 		}
@@ -114,9 +115,31 @@ boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, cha
 	return false;
 }
 
-void do_figlet(char[] text, char[] target)
+boolean load_font()
 {
-	char[][] result = new char[charheight][maxlen];
+	try (InputStream in = Mod.class.getResourceAsStream("figletfont.txt")) {
+		this.font = new byte[3505];
+		int total = 0;
+		do {
+			int read = in.read(this.font, 0, this.font.length);
+			if (read == -1) {
+				throw new IOException("EOF");
+			}
+			total += read;
+		} while (total != this.font.length);
+		return true;
+	} catch (IOException e) {
+		return false;
+	}
+}
+
+/**
+ * @param result array to fill in the characters, should be of dimensions {@code charheight,maxlen}
+ * @param text text to render
+ * @return amount of characters filled horizontally (rows may have trailing whitespace)
+ */
+int do_figlet(char[][] result, char[] text)
+{
 	int x = 0;
 	for (int i = 0, l = text.length; i < l; i++) {
 		char c = text[i];
@@ -124,16 +147,7 @@ void do_figlet(char[] text, char[] target)
 		c -= 32;
 		x = this.append_char(x, c, result);
 	}
-	nextrow:
-	for (int i = 0; i < charheight; i++) {
-		int len = x;
-		while (result[i][len] <= ' ') {
-			if (--len == 0) {
-				continue nextrow;
-			}
-		}
-		this.anna.privmsg(target, result[i], 0, len + 1);
-	}
+	return x;
 }
 
 int append_char(int x, int charindex, char[][] result)
@@ -174,6 +188,9 @@ int append_char(int x, int charindex, char[][] result)
 	} while (tries < 3 && !allwhite && !overlapped && x > 0);
 	for (int j = 1; j < cw; j++) {
 		x++;
+		if (x >= maxlen) {
+			break;
+		}
 		for (int i = 0; i < charheight; i++) {
 			result[i][x] = (char) this.font[start + j + cw * i];
 		}
