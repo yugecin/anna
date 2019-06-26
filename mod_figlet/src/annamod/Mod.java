@@ -189,27 +189,17 @@ int append_char(int x, int charindex, boolean do_overlap, char[][] result)
 		}
 		x++;
 		for (int i = 0; i < charheight; i++) {
-			result[i][x] = overlap(result[i][x], (char) this.font[start + j + cw * i]);
+			char a = result[i][x];
+			char b = (char) this.font[start + j + cw * i];
+			if ((a != 0 && b == ' ') ||
+				(b == '|' && (a == ')' || a == '/' || a == '\\') || a == '<') ||
+				(b == '_' && (a == '|' || a == ')' || a == '\\')))
+			{
+				b = a;
+			}
+			result[i][x] = b;
 		}
 	}
 	return x + 1;
-}
-
-/**
- * @param a original char
- * @param b new char
- * @return the char that should be printed
- */
-char overlap(char a, char b)
-{
-	if (a != 0 && (
-			b == ' ' ||
-			(b == '|' && (a == ')' || a == '/' || a == '\\') || a == '<') ||
-			(b == '_' && (a == '|' || a == ')' || a == '\\'))
-		))
-	{
-		return a;
-	}
-	return b;
 }
 }
