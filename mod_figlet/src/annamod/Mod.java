@@ -152,7 +152,6 @@ int do_figlet(char[][] result, char[] text)
 
 int append_char(int x, int charindex, char[][] result)
 {
-	// TODO: pli plg plig doesn't output anything
 	int start = 0;
 	for (int i = charindex - 1; i >= 0; i--) {
 		start += charwidth[i] * charheight;
@@ -165,19 +164,12 @@ int append_char(int x, int charindex, char[][] result)
 	do {
 		tries++;
 		x--;
+		if (x >= maxlen) {
+			break;
+		}
 		for (int i = 0; i < charheight; i++) {
 			char a = result[i][x];
 			char b = (char) this.font[start + cw * i];
-			char n = b;
-			if (a != 0 && (
-					b == ' ' ||
-					(b == '|' && (a == ')' || a == '/' || a == '\\')) ||
-					(b == '_' && (a == '|' || a == ')' || a == '\\'))
-				))
-			{
-				n = a;
-			}
-			result[i][x] = n;
 			if (b > ' ') {
 				allwhite = false;
 			}
@@ -186,15 +178,34 @@ int append_char(int x, int charindex, char[][] result)
 			}
 		}
 	} while (tries < 3 && !allwhite && !overlapped && x > 0);
-	for (int j = 1; j < cw; j++) {
-		x++;
-		if (x >= maxlen) {
+	x--;
+	for (int j = 0; j < cw; j++) {
+		if (x + 1 >= maxlen) {
 			break;
 		}
+		x++;
 		for (int i = 0; i < charheight; i++) {
-			result[i][x] = (char) this.font[start + j + cw * i];
+			result[i][x] = overlap(result[i][x], (char) this.font[start + j + cw * i]);
 		}
 	}
 	return x + 1;
+}
+
+/**
+ * @param a original char
+ * @param b new char
+ * @return the char that should be printed
+ */
+char overlap(char a, char b)
+{
+	if (a != 0 && (
+			b == ' ' ||
+			(b == '|' && (a == ')' || a == '/' || a == '\\')) ||
+			(b == '_' && (a == '|' || a == ')' || a == '\\'))
+		))
+	{
+		return a;
+	}
+	return b;
 }
 }
