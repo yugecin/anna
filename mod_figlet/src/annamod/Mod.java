@@ -161,9 +161,9 @@ int append_char(int x, int[] len, int charindex, boolean do_overlap, char[][] re
 		start += charwidth[i] * charheight;
 	}
 	int cw = charwidth[charindex];
-	boolean overlapped = false;
 	if (do_overlap) {
 		x++;
+		out:
 		do {
 			x--;
 			if (x >= maxlen) {
@@ -173,10 +173,10 @@ int append_char(int x, int[] len, int charindex, boolean do_overlap, char[][] re
 				char a = result[i][x];
 				char b = (char) this.font[start + cw * i];
 				if (a > ' ' && b > ' ') {
-					overlapped = true;
+					break out;
 				}
 			}
-		} while (!overlapped && x > 0);
+		} while (x > 0);
 	}
 	x--;
 	for (int j = 0; j < cw; j++) {
