@@ -91,13 +91,21 @@ throws IOException
 public
 boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, char[] params)
 {
-	if (strcmp(cmd, 'f','i','g','l','e','t')) {
+	boolean rainbow = false;
+	if (strcmp(cmd, 'f','i','g','l','e','t') ||
+		(strcmp(cmd, 'f','i','g','l','e','t','g','a','y') && (rainbow = true)))
+	{
 		if (this.nextinvoc >= System.currentTimeMillis()) {
 			this.anna.privmsg(replytarget, "don't make me flood".toCharArray());
 			floodprotect++;
 		} else if (params != null && params.length > 0) {
 			char[][] result = new char[charheight][maxlen];
 			int[] len = this.do_figlet(result, params);
+			if (rainbow) {
+				char[][] output = new char[charheight][maxlen];
+				this.rainbowify(output, result, len);
+				result = output;
+			}
 			for (int i = 0; i < charheight; i++) {
 				if (len[i] > 0) {
 					this.anna.privmsg(replytarget, result[i], 0, len[i]);
@@ -207,5 +215,37 @@ int append_char(int x, int[] len, int charindex, boolean do_overlap, char[][] re
 		}
 	}
 	return x + 1;
+}
+
+/**
+ * Adds rainbow colors to the output
+ *
+ * @param output
+ * @param input
+ * @param len array of line lengths of the input, will be changed to reflect line lengths of output
+ */
+void rainbowify(char[][] output, char[][] input, int[] len)
+{
+	char[] colors1 = { '0', '0', '0', '0', '1', '0' };
+	char[] colors2 = { '4', '7', '8', '3', '2', '6' };
+	for (int line = 0; line < charheight; line++) {
+		int color = (line / 2) % colors1.length;
+		char[] i = input[line];
+		char[] o = output[line];
+		int j = 0;
+		int k = 0;
+		while (k < o.length - 4 && j < len[line]) {
+			o[k++] = Constants.CTRL_COLOR;
+			o[k++] = colors1[color];
+			o[k++] = colors2[color];
+			o[k++] = i[j++];
+			if (j >= len[line]) {
+				break;
+			}
+			o[k++] = i[j++];
+			color = ++color % colors1.length;
+		}
+		len[line] = k;
+	}
 }
 }
