@@ -162,18 +162,25 @@ int append_char(int x, int[] len, int charindex, boolean do_overlap, char[][] re
 	}
 	int cw = charwidth[charindex];
 	if (do_overlap) {
+		int overlap = -1;
 		x++;
 		out:
 		do {
+			overlap++;
+			if (overlap > cw) {
+				overlap = cw;
+			}
 			x--;
 			if (x >= maxlen) {
 				break;
 			}
 			for (int i = 0; i < charheight; i++) {
 				char a = result[i][x];
-				char b = (char) this.font[start + cw * i];
-				if (a > ' ' && b > ' ') {
-					break out;
+				for (int o = 0; o < overlap; o++) {
+					char b = (char) this.font[start + o + cw * i];
+					if (a > ' ' && b > ' ') {
+						break out;
+					}
 				}
 			}
 		} while (x > 0);
@@ -187,7 +194,7 @@ int append_char(int x, int[] len, int charindex, boolean do_overlap, char[][] re
 		for (int i = 0; i < charheight; i++) {
 			char a = result[i][x];
 			char b = (char) this.font[start + j + cw * i];
-			if ((a != 0 && b == ' ') ||
+			if ((a > ' ' && b == ' ') ||
 				(b == '|' && (a == ')' || a == '/' || a == '\\') || a == '<') ||
 				(b == '_' && (a == '|' || a == ')' || a == '\\')))
 			{
