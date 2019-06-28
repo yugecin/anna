@@ -229,20 +229,26 @@ void rainbowify(char[][] output, char[][] input, int[] len)
 	char[] colors1 = { '0', '0', '0', '0', '1', '0' };
 	char[] colors2 = { '4', '7', '8', '3', '2', '6' };
 	for (int line = 0; line < charheight; line++) {
-		int color = (line / 2) % colors1.length;
+		int color = line % colors1.length;
 		char[] i = input[line];
 		char[] o = output[line];
 		int j = 0;
 		int k = 0;
 		while (k < o.length - 4 && j < len[line]) {
-			o[k++] = Constants.CTRL_COLOR;
-			o[k++] = colors1[color];
-			o[k++] = colors2[color];
-			o[k++] = i[j++];
-			if (j >= len[line]) {
-				break;
+			boolean c = false;
+			for (int z = 0; z < 2; z++) {
+				char nc = i[j++];
+				if (!c && nc != ' ') {
+					o[k++] = Constants.CTRL_COLOR;
+					o[k++] = colors1[color];
+					o[k++] = colors2[color];
+					c = true;
+				}
+				o[k++] = nc;
+				if (j >= len[line]) {
+					break;
+				}
 			}
-			o[k++] = i[j++];
 			color = ++color % colors1.length;
 		}
 		len[line] = k;
