@@ -22,8 +22,9 @@ static int restarts = -1;
 static int sent, recv;
 static long last_start;
 
+final int port;
+
 private final Anna anna;
-private final int port;
 private final LinkedList<StatsServerConnection> connections;
 
 private ServerSocket socket;

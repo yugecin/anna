@@ -81,6 +81,7 @@ private char command_prefix;
 private User[] owners;
 private User me;
 private char[] debugchan;
+private char[] newnick;
 
 /**
  * {@link https://tools.ietf.org/html/draft-brocklesby-irc-isupport-03#section-3.14}
@@ -105,15 +106,32 @@ Anna(ConfigImpl conf)
 	this.joined_channels = new ArrayList<>();
 	this.usermode_updates = new LinkedList<>();
 
-	if (conf.getBool("stats.enable")) {
-		int stats_server_port = conf.getInt("stats.port");
-		if (1024 < stats_server_port && stats_server_port < 65500) {
-			this.stats_server = new StatsServer(this, stats_server_port);
-			this.stats_server.start();
-		} else {
-			Log.error("stats.port must be between 1024 and 66500");
+	me = new User();
+	me.nick = conf.getStr("bot.nick").toCharArray();
+	me.name = conf.getStr("bot.user").toCharArray();
+	me.host = new char[] { '*' };
+
+	this.config_loaded();
+
+	// remove old tmp mod jars
+	File[] files = new File(".").getAbsoluteFile().listFiles();
+	for (File f : files) {
+		if (f.getName().startsWith(".tmp-mod_")) {
+			if (!f.delete()) {
+				Log.warn("could not remove leftover tmp mod jar " + f.getName());
+			}
 		}
 	}
+}
+
+private
+void config_loaded()
+{
+	int stats_port = -1;
+	if (conf.getBool("stats.enable")) {
+		stats_port = conf.getInt("stats.port");
+	}
+	this.ensure_stats_server(stats_port);
 
 	String cmdprefix = conf.getStr("commands.prefix");
 	if (cmdprefix != null && cmdprefix.length() == 1) {
@@ -147,10 +165,20 @@ Anna(ConfigImpl conf)
 		this.owners = User.EMPTY_ARRAY;
 	}
 
-	me = new User();
-	me.nick = conf.getStr("bot.nick").toCharArray();
-	me.name = conf.getStr("bot.user").toCharArray();
-	me.host = new char[] { '*' };
+	if (!this.connection_state) {
+		me.nick = conf.getStr("bot.nick").toCharArray();
+	} else {
+		// TODO: same for user? info? (if that's even possible?)
+		this.newnick = conf.getStr("bot.nick").toCharArray();
+		if (strcmp(this.newnick, me.nick)) {
+			this.newnick = null;
+		} else {
+			char[] buf = new char[5 + this.newnick.length];
+			set(buf, 0, 'N','I','C','K',' ');
+			arraycopy(this.newnick, 0, buf, 5, this.newnick.length);
+			this.send_raw(buf, 0, buf.length);
+		}
+	}
 
 	String debugchan = conf.getStr("debug.channel");
 	if (debugchan != null && debugchan.length() > 0 && debugchan.charAt(0) == '#') {
@@ -158,16 +186,36 @@ Anna(ConfigImpl conf)
 	} else {
 		this.debugchan = "#anna".toCharArray();
 	}
+}
 
-	// remove old tmp mod jars
-	File[] files = new File(".").getAbsoluteFile().listFiles();
-	for (File f : files) {
-		if (f.getName().startsWith(".tmp-mod_")) {
-			if (!f.delete()) {
-				Log.warn("could not remove leftover tmp mod jar " + f.getName());
-			}
+/**
+ * makes sure the stat server is running or not running
+ *
+ * @param port port that stats server should have (can be {@code -1} to ensure that it doesn't run)
+ */
+private
+void ensure_stats_server(int port)
+{
+	if (port == -1) {
+		if (this.stats_server != null) {
+			this.stats_server.interrupt();
 		}
+		return;
 	}
+	if (port <= 1024 || 65500 <= port) {
+		Log.error("stats.port must be between 1024 and 66500");
+	}
+	if (this.stats_server != null &&
+		this.stats_server.isAlive() &&
+		!this.stats_server.isInterrupted())
+	{
+		if (this.stats_server.port == port) {
+			return;
+		}
+		this.stats_server.interrupt();
+	}
+	this.stats_server = new StatsServer(this, port);
+	this.stats_server.start();
 }
 
 @Override
@@ -491,6 +539,18 @@ void dispatch_message(Message msg)
 				}
 			}
 		}
+		return;
+	}
+
+	// <- :server 433 anna robin_be :Nickname is already in use.
+	if (msg.cmdnum == ERR_NICKNAMEINUSE) {
+		if (this.newnick != null) {
+			this.log_warn("nickname is already in use");
+			this.newnick = null;
+		} else {
+			Log.warn("got ERR_NICKNAMEINUSE but no new nick pending?");
+		}
+		return;
 	}
 }
 
@@ -564,6 +624,9 @@ void handle_kick(User user, char[] channel, char[] kickeduser, char[] msg)
  */
 void handle_nick(User user, char[] newnick)
 {
+	if (strcmp(me.nick, user.nick)) {
+		me.nick = newnick;
+	}
 	int i = this.joined_channels.size();
 	while (i-- > 0) {
 		Channel chan = this.joined_channels.get(i);
@@ -800,10 +863,14 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 			if (!conf.save()) {
 				this.privmsg(replytarget, "failed to save conf".toCharArray());
 			}
-			for (IMod m : this.mods) {
-				if (modname.equals(m.getName())) {
-					m.config_loaded(conf);
-					break;
+			if (conf == this.conf) {
+				this.config_loaded();
+			} else {
+				for (IMod m : this.mods) {
+					if (modname.equals(m.getName())) {
+						m.config_loaded(conf);
+						break;
+					}
 				}
 			}
 		}
