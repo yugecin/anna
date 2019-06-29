@@ -13,8 +13,14 @@ import static net.basdon.anna.api.Util.*;
 
 public class Mod implements IMod
 {
-static final int DEFAULT_DELAY = 10000;
+static final int DEFAULT_CMD_DELAY = 10000;
+static final int DEFAULT_LINE_DELAY = 450;
+static final int DEFAULT_UNDELAYED_LINE_AMOUNT = 3;
+static final String DEFAULT_NOFLOOD_MSG = "don't make me flood";
 static final String CONF_CMD_DELAY = "command.delay";
+static final String CONF_UNDELAYED_LINE_AMOUNT = "undelayed.line.amount";
+static final String CONF_LINE_DELAY = "line.delay";
+static final String CONF_NOFLOOD_MSG = "noflood.message";
 static final Properties defaultconf;
 static final int charheight = 6, maxlen = 450;
 static final int[] charwidth = {
@@ -27,8 +33,11 @@ static final int[] charwidth = {
 
 static
 {
-	defaultconf = new Properties();
-	defaultconf.setProperty(CONF_CMD_DELAY, String.valueOf(DEFAULT_DELAY));
+	Properties dc = defaultconf = new Properties();
+	dc.setProperty(CONF_CMD_DELAY, String.valueOf(DEFAULT_CMD_DELAY));
+	dc.setProperty(CONF_LINE_DELAY, String.valueOf(DEFAULT_LINE_DELAY));
+	dc.setProperty(CONF_UNDELAYED_LINE_AMOUNT, String.valueOf(DEFAULT_UNDELAYED_LINE_AMOUNT));
+	dc.setProperty(CONF_NOFLOOD_MSG, DEFAULT_NOFLOOD_MSG);
 }
 
 byte[] font;
@@ -36,7 +45,11 @@ IAnna anna;
 long nextinvoc;
 int serves;
 int floodprotect;
-int delay = DEFAULT_DELAY;
+int delay = DEFAULT_CMD_DELAY;
+int line_delay = DEFAULT_LINE_DELAY;
+int undelayed_line_amount = DEFAULT_UNDELAYED_LINE_AMOUNT;
+char[] nofloodmsg = DEFAULT_NOFLOOD_MSG.toCharArray();
+SendThread send_thread;
 
 @Override
 public
@@ -70,6 +83,12 @@ public boolean on_enable(IAnna anna)
 
 	Config conf = anna.load_mod_conf(this, defaultconf);
 	this.delay = conf.getInt(CONF_CMD_DELAY, 2000, Integer.MAX_VALUE);
+	this.line_delay = conf.getInt(CONF_LINE_DELAY, 200, 2000);
+	this.undelayed_line_amount = conf.getInt(CONF_UNDELAYED_LINE_AMOUNT, 1, charheight);
+	String nofloodmsg = conf.getStr(DEFAULT_NOFLOOD_MSG);
+	if (nofloodmsg != null) {
+		this.nofloodmsg = nofloodmsg.toCharArray();
+	}
 	return true;
 }
 
@@ -78,6 +97,13 @@ public
 void on_disable()
 {
 	this.font = null;
+	if (this.send_thread != null && this.send_thread.isAlive()) {
+		this.send_thread.interrupt();
+		try {
+			this.send_thread.join(3000L);
+		} catch (InterruptedException e) {
+		}
+	}
 }
 
 @Override
@@ -96,7 +122,9 @@ boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, cha
 		(strcmp(cmd, 'f','i','g','l','e','t','g','a','y') && (rainbow = true)))
 	{
 		if (this.nextinvoc >= System.currentTimeMillis()) {
-			this.anna.privmsg(replytarget, "don't make me flood".toCharArray());
+			if (this.nofloodmsg != null) {
+				this.anna.privmsg(replytarget, nofloodmsg);
+			}
 			floodprotect++;
 		} else if (params != null && params.length > 0) {
 			char[][] result = new char[charheight][maxlen];
@@ -106,12 +134,25 @@ boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, cha
 				this.rainbowify(output, result, len);
 				result = output;
 			}
+			int delay = this.delay;
+			int sentlines = 0;
 			for (int i = 0; i < charheight; i++) {
 				if (len[i] > 0) {
+					if (sentlines++ >= this.undelayed_line_amount) {
+						SendThread t = this.send_thread = new SendThread();
+						t.anna = this.anna;
+						t.currentline = i;
+						t.len = len;
+						t.result = result;
+						t.target = replytarget;
+						t.start();
+						delay += (charheight - i) * this.line_delay;
+						break;
+					}
 					this.anna.privmsg(replytarget, result[i], 0, len[i]);
 				}
 			}
-			this.nextinvoc = System.currentTimeMillis() + this.delay;
+			this.nextinvoc = System.currentTimeMillis() + delay;
 			serves++;
 		}
 		return true;
@@ -254,4 +295,32 @@ void rainbowify(char[][] output, char[][] input, int[] len)
 		len[line] = k;
 	}
 }
+
+private static class SendThread extends Thread
+{
+IAnna anna;
+char[] target;
+char[][] result;
+int[] len;
+int currentline;
+
+@Override
+public
+void run()
+{
+	while (currentline < charheight) {
+		if (len[currentline] > 0) {
+			try {
+				Thread.sleep(DEFAULT_LINE_DELAY);
+			} catch (InterruptedException e) {
+				return;
+			}
+			this.anna.sync_exec(() -> {
+				anna.privmsg(target, result[currentline], 0, len[currentline]);
+			});
+		}
+		currentline++;
+	}
 }
+}
+} /*Mod*/
