@@ -327,6 +327,7 @@ void isupport(int paramc, char[][] paramv)
 			continue;
 		}
 
+		// PREFIX=(qaohv)~&@%+
 		if (strcmp(p, 0, eq, 'P','R','E','F','I','X')) {
 			int par = indexOf(p, eq, p.length, ')');
 			if (par != -1 && p[eq + 1] == '(') {
@@ -346,6 +347,7 @@ void isupport(int paramc, char[][] paramv)
 			}
 		}
 
+		// CHANMODES=beI,kLf,l,psmntirzMQNRTOVKDdGPZSCc
 		if (strcmp(p, 0, eq, 'C','H','A','N','M','O','D','E','S')) {
 			int[] commas = new int[3];
 			if (occurrences(p, eq, p.length, ',', commas, 3) == 3) {
