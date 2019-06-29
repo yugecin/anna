@@ -65,8 +65,8 @@ boolean matches(User o)
 public String toString()
 {
 	if (this.name == null) {
-		return new String(name) + "@" + new String(host);
+		return new String(nick) + "@" + new String(host);
 	}
-	return new String(name) + "!" + new String(name) + "@" + new String(host);
+	return new String(nick) + "!" + new String(name) + "@" + new String(host);
 }
 }
