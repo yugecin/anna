@@ -45,7 +45,10 @@ conf <modname> <setting> -- view or change a configuration setting,
      [newvalue]             use 'anna' as modname for core settings.
                             Newvalue may can be an empty string, in
                             that case the last character after the
-                            setting must be a single space.
+                            setting must be a single space. Changing
+                            a setting will immediately save the conf
+                            file and notice the mod that settings
+                            have been changed.
 
 stats
 -----
