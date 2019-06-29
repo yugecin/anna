@@ -224,8 +224,8 @@ int append_char(int x, int[] len, int charindex, boolean do_overlap, char[][] re
 				break;
 			}
 			for (int i = 0; i < charheight; i++) {
-				char a = result[i][x];
 				for (int o = 0; o < overlap; o++) {
+					char a = result[i][x + o];
 					char b = (char) this.font[start + o + cw * i];
 					if (a > ' ' && b > ' ') {
 						break out;
