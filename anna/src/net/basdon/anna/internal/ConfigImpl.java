@@ -50,7 +50,7 @@ ConfigImpl load(String name, Properties defaults)
 			}
 		}
 		if (needsave) {
-			save(conf_file, defaults);
+			save(conf_file, props);
 		}
 		return new ConfigImpl(conf_file, props, /*is_new*/ false);
 	} catch (FileNotFoundException e) {
