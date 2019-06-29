@@ -24,7 +24,8 @@ protected Config(Properties props, boolean is_new)
  * @return associated integer value associated with the key,
  *         or 0 if no such key or key is not an int
  */
-public int getInt(String key)
+public
+int getInt(String key)
 {
 	try {
 		return Integer.parseInt(this.props.getProperty(key, "0"));
@@ -36,7 +37,8 @@ public int getInt(String key)
 /**
  * variant of {@link #getInt(String)} with boundaries
  */
-public int getInt(String key, int lower_bound, int upper_bound)
+public
+int getInt(String key, int lower_bound, int upper_bound)
 {
 	return Math.min(Math.max(this.getInt(key), lower_bound), upper_bound);
 }
@@ -46,7 +48,8 @@ public int getInt(String key, int lower_bound, int upper_bound)
  *
  * @return value associated with the key or null
  */
-public String getStr(String key)
+public
+String getStr(String key)
 {
 	return this.props.getProperty(key);
 }
@@ -56,8 +59,17 @@ public String getStr(String key)
  *
  * @return associated boolean value associated with the key, or {@code false} if no such key
  */
-public boolean getBool(String key)
+public
+boolean getBool(String key)
 {
 	return Boolean.parseBoolean(this.props.getProperty(key));
 }
+
+/**
+ * saves the config file
+ *
+ * @return {@code true} on success
+ */
+public abstract
+boolean save();
 }
