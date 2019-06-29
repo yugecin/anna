@@ -1232,6 +1232,7 @@ void privmsg(char[] target, char[] text, int offset, int len)
 	buf[off++] = ':';
 	arraycopy(text, offset, buf, off, len);
 	send_raw(buf, 0, buf.length);
+	this.mods_invoke("selfmessage", m -> m.on_selfmessage(target, text, offset, len));
 }
 
 @Override
@@ -1251,6 +1252,7 @@ void action(char[] target, char[] text)
 	off += text.length;
 	buf[off] = 1;
 	send_raw(buf, 0, buf.length);
+	this.mods_invoke("selfaction", m -> m.on_selfaction(target, text));
 }
 
 @Override

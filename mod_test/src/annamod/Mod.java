@@ -70,6 +70,28 @@ void on_message(User user, char[] target, char[] replytarget, char[] message)
 
 @Override
 public
+void on_selfmessage(char[] target, char[] text, int offset, int len)
+{
+	out.printf(
+		"mod_test: on_selfmessage target: %s text: %s%n",
+		new String(target),
+		new String(text, offset, len)
+	);
+}
+
+@Override
+public
+void on_selfaction(char[] target, char[] text)
+{
+	out.printf(
+		"mod_test: on_selfaction target: %s text: %s%n",
+		new String(target),
+		new String(text)
+	);
+}
+
+@Override
+public
 boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, char[] params)
 {
 	out.printf(
