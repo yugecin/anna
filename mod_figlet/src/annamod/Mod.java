@@ -83,7 +83,14 @@ public boolean on_enable(IAnna anna)
 		return false;
 	}
 
-	Config conf = anna.load_mod_conf(this, defaultconf);
+	anna.load_mod_conf(this, defaultconf);
+	return true;
+}
+
+@Override
+public
+void config_loaded(Config conf)
+{
 	this.delay = conf.getInt(CONF_CMD_DELAY, 2000, Integer.MAX_VALUE);
 	this.line_delay = conf.getInt(CONF_LINE_DELAY, 200, 2000);
 	this.undelayed_line_amount = conf.getInt(CONF_UNDELAYED_LINE_AMOUNT, 1, charheight);
@@ -91,7 +98,6 @@ public boolean on_enable(IAnna anna)
 	if (nofloodmsg != null) {
 		this.nofloodmsg = nofloodmsg.toCharArray();
 	}
-	return true;
 }
 
 @Override
@@ -331,5 +337,5 @@ void run()
 		currentline++;
 	}
 }
-}
+} /*SendThread*/
 } /*Mod*/

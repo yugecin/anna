@@ -11,13 +11,14 @@ public interface IAnna
 /**
  * Load the config file associated with this mod.
  * Config file will be loaded from {@code conf/<modname>.properties}
+ * If the config was loaded successfully, {@link IMod#config_loaded} will be called.
  *
  * @param requester the mod that wants to load its config
  * @param defaults default settings or {@code null}
- * @return config or {@code null} if an error occured while reading the file or the config did not
+ * @return {@code false} if an error occured while reading the file or the config did not
  *         exist and defaults could not be written into a new config file.
  */
-Config load_mod_conf(IMod requester, Properties defaults);
+boolean load_mod_conf(IMod requester, Properties defaults);
 /**
  * @return a list of all joined channels (not a copy, don't edit this list)
  */

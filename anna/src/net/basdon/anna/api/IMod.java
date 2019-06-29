@@ -37,6 +37,13 @@ boolean on_enable(IAnna anna);
  */
 void on_disable();
 /**
+ * Called when the config of this mod is (re)loaded or changed.
+ */
+default
+void config_loaded(Config conf)
+{
+}
+/**
  * Called when a message is received (commands excluded). May be channel or private.
  * It's a channel message if {@code target == replytarget}.
  *

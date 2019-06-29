@@ -68,6 +68,7 @@ static
 
 private final ArrayList<IMod> mods;
 private final HashMap<IMod, File> modfile;
+private final HashMap<String, ConfigImpl> modconfigs;
 private final ArrayList<Channel> joined_channels;
 private final LinkedList<BufferedUserModeChange> usermode_updates;
 
@@ -90,16 +91,17 @@ char[] prefixes, modes;
  */
 char[] chanmodes_a, chanmodes_b, chanmodes_c, chanmodes_d;
 
-final Config conf;
+final ConfigImpl conf;
 
 Output writer;
 
-Anna(Config conf)
+Anna(ConfigImpl conf)
 {
 	this.time_start = this.time_disconnect = System.currentTimeMillis();
 	this.conf = conf;
 	this.mods = new ArrayList<>();
 	this.modfile = new HashMap<>();
+	this.modconfigs = new HashMap<>();
 	this.joined_channels = new ArrayList<>();
 	this.usermode_updates = new LinkedList<>();
 
@@ -170,9 +172,17 @@ Anna(Config conf)
 
 @Override
 public
-Config load_mod_conf(IMod requester, Properties defaults)
+boolean load_mod_conf(IMod requester, Properties defaults)
 {
-	return ConfigImpl.load(requester.getName(), defaults);
+	String modname = requester.getName();
+	ConfigImpl conf = ConfigImpl.load(modname, defaults);
+	if (conf == null) {
+		this.modconfigs.remove(modname);
+		return false;
+	}
+	this.modconfigs.put(modname, conf);
+	requester.config_loaded(conf);
+	return true;
 }
 
 void print_stats(Output out)
@@ -747,6 +757,57 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 			}
 		}
 		this.privmsg(replytarget, "mod not loaded".toCharArray());
+		return;
+	}
+
+	if (strcmp(cmd, 'c','o','n','f') && is_owner(user)) {
+		int space, space2;
+		if (params == null ||
+			(space = indexOf(params, 0, params.length, ' ')) == -1 ||
+			space == params.length - 1 ||
+			(space2 = indexOf(params, space + 1, params.length, ' ')) != -1 &&
+			space2 == space + 1)
+		{
+			this.privmsg(replytarget, "conf modname setting".toCharArray());
+			return;
+		}
+		String modname = new String(params, 0, space);
+		ConfigImpl conf;
+		if ("anna".equals(modname)) {
+			conf = this.conf;
+			// prevent sensitive conf exposure (nickserv passwords, ..)
+		} else {
+			if ((conf = this.modconfigs.get(modname)) == null) {
+				this.privmsg(replytarget, "no conf for that mod".toCharArray());
+				return;
+			}
+		}
+		int to = space2 == -1 ? params.length : space2;
+		String key = new String(params, space + 1, to - space - 1);
+		String val = conf.props.getProperty(key);
+		if (val == null) {
+			this.privmsg(replytarget, "unknown prop".toCharArray());
+			return;
+		}
+		if (space2 != -1) {
+			key = new String(params, space + 1, space2 - space - 1);
+			if (space2 == params.length - 1) {
+				val = "";
+			} else {
+				val = new String(params, space2 + 1, params.length - space2 - 1);
+			}
+			conf.props.setProperty(key, val);
+			if (!conf.save()) {
+				this.privmsg(replytarget, "failed to save conf".toCharArray());
+			}
+			for (IMod m : this.mods) {
+				if (modname.equals(m.getName())) {
+					m.config_loaded(conf);
+					break;
+				}
+			}
+		}
+		this.privmsg(replytarget, (key + ": " + val).toCharArray());
 		return;
 	}
 
