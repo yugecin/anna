@@ -43,7 +43,9 @@ static
 byte[] font;
 IAnna anna;
 long nextinvoc;
-int serves;
+long lastserve;
+int totalserves;
+int gayserves;
 int floodprotect;
 int delay = DEFAULT_CMD_DELAY;
 int line_delay = DEFAULT_LINE_DELAY;
@@ -108,9 +110,15 @@ void on_disable()
 
 @Override
 public
-void print_stats(Output output)
+void print_stats(Output out)
 throws IOException
 {
+	out.print(" serves: " + totalserves + "\n");
+	out.print(" plain/gay: " + (totalserves - gayserves) + "/" + gayserves + "\n");
+	out.print(" floodprotects: " + floodprotect + "\n");
+	if (lastserve > 0) {
+		out.print(" lastserve: " + format_time(lastserve) + "\n");
+	}
 }
 
 @Override
@@ -127,12 +135,14 @@ boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, cha
 			}
 			floodprotect++;
 		} else if (params != null && params.length > 0) {
+			this.totalserves++;
 			char[][] result = new char[charheight][maxlen];
 			int[] len = this.do_figlet(result, params);
 			if (rainbow) {
 				char[][] output = new char[charheight][maxlen];
 				this.rainbowify(output, result, len);
 				result = output;
+				this.gayserves++;
 			}
 			int delay = this.delay;
 			int sentlines = 0;
@@ -152,8 +162,7 @@ boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, cha
 					this.anna.privmsg(replytarget, result[i], 0, len[i]);
 				}
 			}
-			this.nextinvoc = System.currentTimeMillis() + delay;
-			serves++;
+			this.nextinvoc = (this.lastserve = System.currentTimeMillis()) + delay;
 		}
 		return true;
 	}
