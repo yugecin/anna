@@ -58,6 +58,7 @@ static
 	default_config.put("bot.nick", "Anna^");
 	default_config.put("bot.user", "Anna");
 	default_config.put("bot.userinfo", "github.com/yugecin/anna");
+	default_config.put("mods.enabled", "");
 	default_config.put("messages.restart", "I'll be back");
 	default_config.put("messages.quit",
 	                   "only in Sweden can a dance rap song about IRC hit #1 on the charts");
@@ -120,6 +121,13 @@ Anna(ConfigImpl conf)
 			if (!f.delete()) {
 				Log.warn("could not remove leftover tmp mod jar " + f.getName());
 			}
+		}
+	}
+
+	String enabledmods = conf.getStr("mods.enabled");
+	if (enabledmods != null) {
+		for (String m : enabledmods.split(String.valueOf(','))) {
+			this.mod_load(m.toCharArray(), null);
 		}
 	}
 }
@@ -271,6 +279,12 @@ throws IOException
 		out.print(" mods load/unload counts: ");
 		out.print(this.mod_loadcount + "/" + this.mod_unloadcount + "\n");
 		out.print(" mods loaded now: " + this.mods.size() + "\n");
+		out.print(" enabled mods: ");
+		String enabled = this.conf.getStr("mods.enabled");
+		if (enabled != null) {
+			out.print(enabled);
+		}
+		out.print("\n");
 		out.print("\n");
 		for (IMod mod : this.mods) {
 			out.print(mod.getName() + "\n");
@@ -807,6 +821,81 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 		return;
 	}
 
+	if (strcmp(cmd, 'e','n','a','b','l','e','m','o','d') && is_owner(user)) {
+		if (params == null) {
+			this.privmsg(replytarget, "specify mod_name".toCharArray());
+			return;
+		}
+		String modname = new String(params);
+		String enabledmods = this.conf.getStr("mods.enabled");
+		boolean enabled = false;
+		for (String m : enabledmods.split(String.valueOf(','))) {
+			if (modname.equals(m)) {
+				this.privmsg(replytarget, "mod is already enabled".toCharArray());
+				enabled = true;
+				break;
+			}
+		}
+		if (!enabled) {
+			if (enabledmods.isEmpty()) {
+				enabledmods = modname;
+			} else {
+				enabledmods += ',' + modname;
+			}
+			this.conf.props.setProperty("mods.enabled", enabledmods);
+			this.conf.save();
+			// don't need to reload because these changes are ignored anyways
+		}
+		for (IMod m : this.mods) {
+			if (modname.equals(m.getName())) {
+				return;
+			}
+		}
+		this.mod_load(params, replytarget);
+		return;
+	}
+
+	if (strcmp(cmd, 'd','i','s','a','b','l','e','m','o','d') && is_owner(user)) {
+		if (params == null) {
+			this.privmsg(replytarget, "specify mod_name".toCharArray());
+			return;
+		}
+		String modname = new String(params);
+		String enabled = this.conf.getStr("mods.enabled");
+		String[] enabledmods;
+		if (enabled == null) {
+			enabledmods = new String[0];
+		} else {
+			enabledmods = enabled.split(String.valueOf(','));
+		}
+		boolean found = false;
+		StringBuilder sb = new StringBuilder();
+		for (String m : enabledmods) {
+			if (!modname.equals(m)) {
+				if (sb.length() > 0) {
+					sb.append(',');
+				}
+				sb.append(m);
+			} else {
+				found = true;
+			}
+		}
+		if (found) {
+			this.conf.props.setProperty("mods.enabled", sb.toString());
+			this.conf.save();
+			// don't need to reload because these changes are ignored anyways
+		} else {
+			this.privmsg(replytarget, "mod was not enabled".toCharArray());
+		}
+		for (IMod m : this.mods) {
+			if (modname.equals(m.getName())) {
+				this.mod_unload(params, replytarget);
+				return;
+			}
+		}
+		return;
+	}
+
 	if (strcmp(cmd, 'm','o','d','i','n','f','o') && is_owner(user)) {
 		if (params == null) {
 			this.privmsg(replytarget, "specify mod_name".toCharArray());
@@ -1034,6 +1123,7 @@ void mod_load(char[] modname, char[] replytarget)
 			this.mods.add(mod);
 			this.modfile.put(mod, nf);
 			String msg = "loaded " + mod.getName() + " v" + mod.getVersion();
+			Log.info(msg);
 			this.privmsg(replytarget, msg.toCharArray());
 			this.mod_loadcount++;
 		} catch (MalformedURLException e) {

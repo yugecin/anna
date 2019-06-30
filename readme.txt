@@ -40,7 +40,14 @@ killstats                -- kill the stats server
 loadmod mod_<modname>    -- load a mod
 unloadmod mod_<modname>  -- unload a mod
 reloadmod mod_<modname>  -- reload a mod
-modinfo mod_<modname>    -- show info about a mod
+enablemod mod_<modname>  -- enables a mod, meaning the mod will be
+                            loaded whenever anna starts. If the mod
+                            is not loaded now, it will be loaded. To
+                            not load the mod now but do add it to the
+                            startup, append the mod_modname to the end
+                            of the conf setting mods.enabled
+disablemod mod_<modname> -- analogue to enablemod
+modinfo mod_<modname>    -- show info about a (loaded) mod
 conf <modname> <setting> -- view or change a configuration setting,
      [newvalue]             use 'anna' as modname for core settings.
                             Newvalue may can be an empty string, in
