@@ -10,6 +10,9 @@ java -jar anna.jar
 Config files can be found as properties file in the config folder in
 the working directory.
 
+https://docs.oracle.com/cd/E23095_01/Platform.93/ATGProgGuide/html/
+s0204propertiesfileformat01.html
+
 When running for the first time, the default config file will be made
 (together with the config folder if necessary) and anna will exit,
 prompting you to change the defaults.
@@ -61,6 +64,28 @@ stats
 -----
 Anna^ has a built-in stats/info server by means of a very primitive
 HTTP server running on port 7755. This can be changed in the config.
+
+configuration
+-------------
+command.prefix                 -- command prefix, should be one character long
+                                  (&)
+bot.nick                       -- nickname of the bot (Anna^)
+bot.user                       -- username of the bot (Anna^)
+bot.userinfo                   -- user info of the bot
+server.host                    -- server to connect to
+server.port                    -- port to connect to
+connection.retrytimeoutseconds -- amount of seconds to wait before reconnecting
+                                  when connection drops (2)
+stats.enable                   -- if stats should be enabled (true)
+stats.port                     -- port for the stats HTTP server (7755)
+mods.enabled                   -- mods to load at boot
+debug.channel                  -- channel to send debug info to
+debug.print.incoming           -- print incoming messages to console (false)
+debug.print.outgoing           -- print outgoing messages to console (false)
+owners                         -- comma separated list of users that are owners
+                                  (robin_be\!*@cyber.space)
+messages.restart               -- quit message when reconnecting
+messages.part                  -- part message when leaving a channel
 
 ---
 http://qdb.us/296934
