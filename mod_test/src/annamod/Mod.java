@@ -5,9 +5,10 @@ package annamod;
 import net.basdon.anna.api.*;
 import net.basdon.anna.api.IAnna.Output;
 
-import static java.lang.System.out;
-
 import java.io.IOException;
+
+import static java.lang.System.out;
+import static net.basdon.anna.api.Util.*;
 
 public class Mod implements IMod
 {
@@ -132,14 +133,22 @@ void on_topic(User user, char[] channel, char[] topic)
 
 @Override
 public
-void on_usermodechange(Channel chan, ChannelUser user, char sign, char mode)
+void on_channelmodechange(Channel chan, int changec, char[] signs, char[] modes,
+                          char[] types, char[][] params, ChannelUser[] users)
 {
+	for (int i = 0; i < changec; i++) {
+		out.printf(
+			"mod_test: on_usermodechanged chan: %s sign: %s mode: %s param: %s%n",
+			new String(chan.name),
+			String.valueOf(signs[i]),
+			String.valueOf(modes[i]),
+			params[i] == null ? "" : new String(params[i])
+		);
+	}
 	out.printf(
-		"mod_test: on_usermodechanged chan: %s user: %s sign: %s mode: %s%n",
+		"mod_test: on_usermodechanged chan: %s mode: %s%n",
 		new String(chan.name),
-		new String(user.nick),
-		String.valueOf(sign),
-		String.valueOf(mode)
+		make_modestr(changec, signs, modes, types, params).toString()
 	);
 }
 

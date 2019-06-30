@@ -187,4 +187,27 @@ String format_time(long millis)
 	sb.append(")");
 	return sb.toString();
 }
+
+/**
+ * Makes a mode string from parameters given to {@link IMod#on_channelmodechange}
+ */
+public static
+StringBuilder make_modestr(int changec, char[] signs, char[] modes, char[] types, char[][] params)
+{
+	StringBuilder sb = new StringBuilder();
+	StringBuilder sb2 = new StringBuilder();
+	char lastsign = 0;
+	for (int i = 0; i < changec; i++) {
+		if (signs[i] != lastsign) {
+			sb.append(lastsign = signs[i]);
+		}
+		sb.append(modes[i]);
+		char t = types[i];
+		if (t != 'd' && (t != 'c' || lastsign == '+')) {
+			sb2.append(' ').append(params[i]);
+		}
+	}
+	sb.append(sb2);
+	return sb;
+}
 }

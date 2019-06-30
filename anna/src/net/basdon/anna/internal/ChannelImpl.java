@@ -43,32 +43,42 @@ void mode_changed(Anna anna, char[][] paramv, int paramc)
 	char[] change = paramv[1];
 	int paramidx = 2;
 	char sign = '+';
-	Anna.BufferedUserModeChange umc = new Anna.BufferedUserModeChange(this, change.length - 1);
+	Anna.BufferedChanModeChange umc = new Anna.BufferedChanModeChange(this, change.length - 1);
 	for (int i = 0; i < change.length; i++) {
 		char c = change[i];
 		if (c == '+' || c == '-') {
 			sign = c;
 			continue;
 		}
+		umc.signs[umc.changec] = sign;
+		umc.modes[umc.changec] = c;
 		if (array_idx(anna.chanmodes_a, c) != -1) {
 			// channel mode list with param
-			paramidx++;
+			umc.params[umc.changec] = paramv[paramidx];
+			umc.types[umc.changec] = 'a';
+			umc.changec++;
 		} else if (array_idx(anna.chanmodes_b, c) != -1) {
 			// channel mode with param
-			paramidx++;
+			umc.params[umc.changec] = paramv[paramidx];
+			umc.types[umc.changec] = 'b';
+			umc.changec++;
 		} else if (array_idx(anna.chanmodes_c, c) != -1) {
 			// channel mode with param when set
 			if (sign == '+') {
-				paramidx++;
+				umc.params[umc.changec] = paramv[paramidx];
 			}
+			umc.types[umc.changec] = 'c';
+			umc.changec++;
 		} else if (array_idx(anna.chanmodes_d, c) != -1) {
 			// channel mode without param
+			umc.types[umc.changec] = 'd';
+			umc.changec++;
+			paramidx--; // (revert the ++ after this if)
 		} else if (array_idx(anna.modes, c) != -1) {
 			if (paramidx >= paramc) {
 				Log.warn("not enough mode params while processing mode " + c);
 			} else {
 				char[] nick = paramv[paramidx];
-				paramidx++;
 				int j = this.userlist.size();
 				while (j-- > 0) {
 					ChannelUserImpl usr;
@@ -80,18 +90,18 @@ void mode_changed(Anna anna, char[][] paramv, int paramc)
 						} else {
 							usr.mode_add(c);
 						}
-						umc.userv[umc.userc] = usr;
-						umc.signs[umc.userc] = sign;
-						umc.modes[umc.userc] = c;
-						umc.userc++;
+						umc.types[umc.changec] = 'u';
+						umc.users[umc.changec] = usr;
+						umc.params[umc.changec] = nick;
+						umc.changec++;
 						break;
 					}
 				}
 			}
 		} else {
 			Log.warn("unknown mode: " + sign + c);
-			paramidx++;
 		}
+		paramidx++;
 	}
 
 	if (need_user_update) {

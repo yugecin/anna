@@ -119,15 +119,21 @@ void on_topic(User user, char[] channel, char[] topic)
 {
 }
 /**
- * Called when a user's (channel) mode has been changed.
+ * Called when one or more channel modes have been changed.
  *
  * @param chan affecting channel
- * @param user user which' mode was changed
- * @param sign the sign, either {@code '+'} or {@code '-'}
- * @param mode the mode that was added or removed
+ * @param changec amount of changes (don't use the array lenghts)
+ * @param signs signs of each change, either {@code +} or {@code -}
+ * @param modes modes of each change
+ * @param types types of each change, either {@code 'u'} for user or {@code 'a'} {@code 'b'}
+ *              {@code 'c'} {@code 'd'}, depending on the type of channel mode
+ * @param params parameter when {@code type} is user or channel type b or channel type c with
+ *               positive sign
+ * @param users user when {@code type} is user
  */
 default
-void on_usermodechange(Channel chan, ChannelUser user, char sign, char mode)
+void on_channelmodechange(Channel chan, int changec, char[] signs, char[] modes,
+                          char[] types, char[][] params, ChannelUser[] users)
 {
 }
 /**

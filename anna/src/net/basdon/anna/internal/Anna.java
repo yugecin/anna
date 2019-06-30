@@ -70,7 +70,7 @@ private final ArrayList<IMod> mods;
 private final HashMap<IMod, File> modfile;
 private final HashMap<String, ConfigImpl> modconfigs;
 private final ArrayList<Channel> joined_channels;
-private final LinkedList<BufferedUserModeChange> usermode_updates;
+private final LinkedList<BufferedChanModeChange> chanmode_updates;
 
 private boolean connection_state;
 private long time_start, time_connect, time_disconnect;
@@ -104,7 +104,7 @@ Anna(ConfigImpl conf)
 	this.modfile = new HashMap<>();
 	this.modconfigs = new HashMap<>();
 	this.joined_channels = new ArrayList<>();
-	this.usermode_updates = new LinkedList<>();
+	this.chanmode_updates = new LinkedList<>();
 
 	me = new User();
 	me.nick = conf.getStr("bot.nick").toCharArray();
@@ -296,7 +296,7 @@ throws IOException
 void connecting()
 {
 	this.joined_channels.clear();
-	this.usermode_updates.clear();
+	this.chanmode_updates.clear();
 	this.prefixes = PREFIXES_DEFAULT;
 	this.modes = MODES_DEFAULT;
 	this.chanmodes_a = this.chanmodes_b = this.chanmodes_c = this.chanmodes_d = EMPTY_CHAR_ARR;
@@ -531,10 +531,10 @@ void dispatch_message(Message msg)
 	// <- :server 366 Anna^ #anna :End of /NAMES list.
 	if (msg.cmdnum == RPL_ENDOFNAMES && msg.trailing_param) {
 		char[] chan = msg.paramv[msg.paramc - 2];
-		if (!this.usermode_updates.isEmpty()) {
-			Iterator<BufferedUserModeChange> iter = this.usermode_updates.iterator();
+		if (!this.chanmode_updates.isEmpty()) {
+			Iterator<BufferedChanModeChange> iter = this.chanmode_updates.iterator();
 			while (iter.hasNext()) {
-				BufferedUserModeChange change = iter.next();
+				BufferedChanModeChange change = iter.next();
 				if (strcmp(chan, change.chan.name)) {
 					change.dispatch(this);
 					iter.remove();
@@ -930,16 +930,24 @@ void handle_topic(User user, char[] channel, char[] topic)
 }
 
 /**
- * Called when a user's (channel) mode has been changed.
+ * Called when one or more channel modes have been changed.
  *
  * @param chan affecting channel
- * @param user user which
- * @param sign
- * @param mode
+ * @param changec amount of changes (don't use the array lenghts)
+ * @param signs signs of each change, either {@code +} or {@code -}
+ * @param modes modes of each change
+ * @param types types of each change, either {@code 'u'} for user or {@code 'a'} {@code 'b'}
+ *              {@code 'c'} {@code 'd'}, depending on the type of channel mode
+ * @param params parameter when {@code type} is user or channel type a or channel type b or channel
+ *               type c with positive sign
+ * @param users user when {@code type} is user
  */
-void handle_usermodechange(ChannelImpl chan, ChannelUser user, char sign, char mode)
+void handle_channelmodechange(ChannelImpl chan, int changec, char[] signs, char[] modes,
+                              char[] types, char[][] params, ChannelUser[] users)
 {
-	this.mods_invoke("usermodechange", m -> m.on_usermodechange(chan, user, sign, mode));
+	this.mods_invoke("channelmodechange", m ->
+		m.on_channelmodechange(chan, changec, signs, modes, types, params, users)
+	);
 }
 
 /**
@@ -1309,41 +1317,45 @@ void sync_exec(Runnable func)
 }
 
 /**
- * stores a batch of channel mode changes to users
+ * stores a batch of channel mode changes
  *
  * these may be dispatched to {@link Anna#handle_usermodechange} directly, or buffered until after
  * receiving RPL_ENDOFNAMES for the matching channel
  */
 static
-class BufferedUserModeChange
+class BufferedChanModeChange
 {
 ChannelImpl chan;
 /**
- * amount of elements in {@code userv}, {@code signs} and {@code modes}
+ * amount of elements in {@code users}, {@code signs}, {@code modes}, {@code types}
  */
-int userc;
-ChannelUser[] userv;
+int changec;
 char[] signs;
 char[] modes;
+char[] types;
+char[][] params;
+ChannelUser[] users;
 
-BufferedUserModeChange(ChannelImpl chan, int maxc)
+BufferedChanModeChange(ChannelImpl chan, int maxc)
 {
 	this.chan = chan;
-	this.userv = new ChannelUser[maxc];
+	this.users = new ChannelUser[maxc];
 	this.signs = new char[maxc];
 	this.modes = new char[maxc];
+	this.types = new char[maxc];
+	this.params = new char[maxc][];
 }
 
 void dispatch(Anna anna)
 {
-	while (userc-- > 0) {
-		anna.handle_usermodechange(chan, userv[userc], signs[userc], modes[userc]);
+	if (changec > 0) {
+		anna.handle_channelmodechange(chan, changec, signs, modes, types, params, users);
 	}
 }
 
 void shedule(Anna anna)
 {
-	anna.usermode_updates.add(this);
+	anna.chanmode_updates.add(this);
 }
 } /*BufferedUserModeChange*/
 
