@@ -963,6 +963,7 @@ void mod_unload(char[] modname, char[] replytarget)
 		this.privmsg(replytarget, "mod is not loaded".toCharArray());
 		return;
 	}
+	this.modconfigs.remove(modnamestr);
 	IMod[] mods = { mod };
 	mod = null; // remove last (hopefully) reference
 	mod_disable(mods);
