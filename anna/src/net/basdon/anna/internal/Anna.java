@@ -207,14 +207,15 @@ void config_loaded()
 private
 void ensure_stats_server(int port)
 {
+	if (port <= 1024 || 65500 <= port) {
+		Log.error("stats.port must be between 1024 and 66500");
+		port = -1;
+	}
 	if (port == -1) {
 		if (this.stats_server != null) {
 			this.stats_server.interrupt();
 		}
 		return;
-	}
-	if (port <= 1024 || 65500 <= port) {
-		Log.error("stats.port must be between 1024 and 66500");
 	}
 	if (this.stats_server != null &&
 		this.stats_server.isAlive() &&
