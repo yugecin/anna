@@ -69,6 +69,7 @@ static
 
 private final ArrayList<IMod> mods;
 private final HashMap<IMod, File> modfile;
+private final ArrayList<char[]> raw_buffer;
 private final HashMap<String, ConfigImpl> modconfigs;
 private final ArrayList<Channel> joined_channels;
 private final LinkedList<BufferedChanModeChange> chanmode_updates;
@@ -83,6 +84,7 @@ private User[] owners;
 private User me;
 private char[] debugchan;
 private char[] newnick;
+private boolean buffer_raw;
 
 /**
  * {@link https://tools.ietf.org/html/draft-brocklesby-irc-isupport-03#section-3.14}
@@ -103,6 +105,7 @@ Anna(ConfigImpl conf)
 	this.conf = conf;
 	this.mods = new ArrayList<>();
 	this.modfile = new HashMap<>();
+	this.raw_buffer = new ArrayList<>(50);
 	this.modconfigs = new HashMap<>();
 	this.joined_channels = new ArrayList<>();
 	this.chanmode_updates = new LinkedList<>();
@@ -410,6 +413,19 @@ void disconnected()
 
 void dispatch_message(Message msg)
 {
+	// buffer everything that will get sent until the message is completely handled
+	this.buffer_raw = true;
+	this.dispatch_message0(msg);
+	this.buffer_raw = false;
+	for (char[] line : this.raw_buffer) {
+		this.send_raw(line, 0, line.length);
+	}
+	this.raw_buffer.clear();
+}
+
+private
+void dispatch_message0(Message msg)
+{
 	User user = null;
 	if (msg.prefix != null) {
 		user = User.parse(msg.prefix, 0, msg.prefix.length);
@@ -692,6 +708,9 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 		}
 	}
 
+	final char[] p = params;
+	this.mods_invoke("command", m -> m.on_command(user, target, replytarget, cmd, p));
+
 	if (strcmp(cmd, 'r','a','w') && params != null && is_owner(user)) {
 		send_raw(params, 0, params.length);
 		return;
@@ -967,14 +986,6 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 		}
 		this.privmsg(replytarget, (key + ": " + val).toCharArray());
 		return;
-	}
-
-	for (IMod mod : this.mods) {
-		try {
-			mod.on_command(user, target, replytarget, cmd, params);
-		} catch (Throwable t) {
-			Log.error("issue while invoking command on mod " + mod.getName(), t);
-		}
 	}
 }
 
@@ -1360,6 +1371,16 @@ void action(char[] target, char[] text)
 public
 void send_raw(char[] buf, int offset, int len)
 {
+	if (this.buffer_raw) {
+		if (offset == 0 && len == buf.length) {
+			this.raw_buffer.add(buf);
+		} else {
+			char[] trimmed = new char[len];
+			arraycopy(buf, offset, trimmed, 0, len);
+			this.raw_buffer.add(trimmed);
+		}
+		return;
+	}
 	if (this.writer != null) {
 		try {
 			char[] msg = new char[len + 2];
