@@ -1413,6 +1413,14 @@ void log_error(String message)
 
 @Override
 public
+void log_warn(Throwable t, String message)
+{
+	Log.warn(message, t);
+	this.privmsg(this.debugchan, ("warn(+t): " + message).toCharArray());
+}
+
+@Override
+public
 void log_warn(String message)
 {
 	Log.warn(message);

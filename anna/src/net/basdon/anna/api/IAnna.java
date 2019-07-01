@@ -65,6 +65,7 @@ void action(char[] target, char[] msg);
 void send_raw(char[] buf, int offset, int len);
 void log_error(Throwable t, String message);
 void log_error(String message);
+void log_warn(Throwable t, String message);
 void log_warn(String message);
 /**
  * Run given function on the main thread. Use this when trying to do anna stuff from a non-main
