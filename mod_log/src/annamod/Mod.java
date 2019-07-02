@@ -218,10 +218,15 @@ OutputStreamWriter logger(char[] chan)
 	return null;
 }
 
-Date time()
+Calendar calendar()
 {
 	this.calendar.setTimeInMillis(System.currentTimeMillis());
-	return this.calendar.getTime();
+	return this.calendar;
+}
+
+Date time()
+{
+	return this.calendar().getTime();
 }
 } /*Mod*/
 
@@ -229,6 +234,7 @@ class ChannelLogger
 {
 Mod mod;
 long timestamp;
+int lastday;
 char[] chan;
 String channel;
 File directory;
@@ -236,7 +242,13 @@ OutputStreamWriter writer;
 
 OutputStreamWriter get_or_open_stream()
 {
-	if (this.writer == null) {
+	int day = mod.calendar().get(Calendar.DAY_OF_YEAR);
+	if (this.writer == null || this.lastday != day) {
+		if (this.writer != null) {
+			close(this.writer);
+			this.writer = null;
+		}
+		this.lastday = day;
 		String filename;
 		filename = format("%s-%tY-%<tm-%<td.html", this.channel, mod.time());
 		File of = new File(this.directory, filename);
