@@ -117,11 +117,13 @@ void config_loaded(Config conf)
 		}
 	}
 
-	for (char[] chan : now_disabled_channels) {
+	Iterator<char[]> chans = now_disabled_channels.iterator();
+	while (chans.hasNext()) {
+		char[] chan = chans.next();
 		ChannelLogger cl = this.loggers.get(chan);
 		if (cl != null) {
 			cl.close_stream();
-			this.loggers.remove(chan);
+			chans.remove();
 		}
 	}
 }
