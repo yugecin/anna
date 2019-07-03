@@ -32,12 +32,16 @@ boolean check_config_directory()
 }
 
 /**
+ * @param defaults default properties or {@code null}
  * @return {@code null} if an error occured while reading the file or an error occured while
  *                      creating the file with default values
  */
 static
 ConfigImpl load(String name, Properties defaults)
 {
+	if (defaults == null) {
+		defaults = new Properties();
+	}
 	Properties props = new Properties();
 	File conf_file = new File(config_dir, name + ".properties");
 	try (InputStream istream = new FileInputStream(conf_file)) {
