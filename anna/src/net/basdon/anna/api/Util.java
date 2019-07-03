@@ -2,6 +2,7 @@
 // see the LICENSE file for more details
 package net.basdon.anna.api;
 
+import java.io.Flushable;
 import java.util.Date;
 
 public class Util
@@ -136,12 +137,19 @@ char[] chars(StringBuilder sb)
 }
 
 /**
+ * Also attempts to flush if ac is {@link Flushable}
+ *
  * @param ac may be {@code null}
  */
 public static
 void close(AutoCloseable ac)
 {
 	if (ac != null) {
+		if (ac instanceof Flushable) {
+			try {
+				((Flushable) ac).flush();
+			} catch (Throwable ignored) {}
+		}
 		try {
 			ac.close();
 		} catch (Throwable ignored) {}

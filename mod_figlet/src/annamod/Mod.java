@@ -129,7 +129,8 @@ throws IOException
 
 @Override
 public
-boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, char[] params)
+boolean on_command(User user, char[] target, char[] replytarget,
+                   char[] message, char[] cmd, char[] params)
 {
 	boolean rainbow = false;
 	if (strcmp(cmd, 'f','i','g','l','e','t') ||

@@ -93,13 +93,16 @@ void on_selfaction(char[] target, char[] text)
 
 @Override
 public
-boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, char[] params)
+boolean on_command(User user, char[] target, char[] replytarget,
+                   char[] message, char[] cmd, char[] params)
 {
 	out.printf(
-		"mod_test: on_command user: %s target: %s replytarget: %s cmd: %s params: %s%n",
+		"mod_test: on_command user: %s target: %s replytarget: %s message: %s "
+		+ "cmd: %s params: %s%n",
 		user == null ? "null" : user.toString(),
 		new String(target),
 		new String(replytarget),
+		new String(message),
 		new String(cmd),
 		params == null ? "null" : new String(params)
 	);

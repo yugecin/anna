@@ -66,7 +66,7 @@ public
 boolean on_enable(IAnna anna)
 {
 	this.anna = anna;
-	anna.load_mod_conf(this, null);
+	anna.load_mod_conf(this, defaultconf);
 	return true;
 }
 
@@ -130,12 +130,17 @@ void config_loaded(Config conf)
 public
 void on_message(User user, char[] target, char[] replytarget, char[] message)
 {
+	char[] nick = user == null ? null : user.nick;
+	this.log_standard_message(target, nick, COL_BLACK, COL_WHITE, message, 0, message.length);
 }
 
 @Override
 public
-boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, char[] params)
+boolean on_command(User user, char[] target, char[] replytarget,
+                   char[] message, char[] cmd, char[] params)
 {
+	char[] nick = user == null ? null : user.nick;
+	this.log_standard_message(target, nick, COL_BLACK, COL_WHITE, message, 0, message.length);
 	return false;
 }
 
@@ -143,18 +148,24 @@ boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, cha
 public
 void on_action(User user, char[] target, char[] replytarget, char[] action)
 {
+	char[] nick = user == null ? null : user.nick;
+	this.log_standard_message(target, nick, COL_PINK, COL_WHITE, action, 0, action.length);
 }
 
 @Override
 public
 void on_selfmessage(char[] target, char[] text, int offset, int len)
 {
+	char[] nick = this.anna.get_anna_user().nick;
+	this.log_standard_message(target, nick, COL_PINK, COL_WHITE, text, offset, len);
 }
 
 @Override
 public
 void on_selfaction(char[] target, char[] text)
 {
+	char[] nick = this.anna.get_anna_user().nick;
+	this.log_standard_message(target, nick, COL_PINK, COL_WHITE, text, 0, text.length);
 }
 
 @Override
@@ -206,6 +217,33 @@ void on_disable()
 {
 	for (ChannelLogger cl : this.loggers.values()) {
 		cl.close_stream();
+	}
+}
+
+/**
+ * @param nick may be {@code null}
+ */
+private
+void log_standard_message(char[] target, char[] nick, int fg, int bg,
+                          char[] message, int off, int len)
+{
+	LogWriter lw = this.logger(target);
+	if (lw != null) {
+		try {
+			if (bg != COL_WHITE) {
+				lw.color(fg, bg);
+			} else if (fg != COL_BLACK) {
+				lw.color(fg);
+			}
+			lw.timestamp(this.time());
+			if (nick != null) {
+				lw.writer.write("<");
+				lw.writer.write(nick);
+				lw.writer.write("> ");
+			}
+			lw.append_parse_ctrlcodes(message, off, len);
+			lw.lf();
+		} catch (IOException ignored) {}
 	}
 }
 
@@ -464,6 +502,12 @@ throws IOException
 	this.has_span = true;
 }
 
+void timestamp(Date time)
+throws IOException
+{
+	this.writer.write(format("[%tH:%<tM:%<tS] ", time));
+}
+
 void lf()
 throws IOException
 {
@@ -472,10 +516,88 @@ throws IOException
 		this.has_span = false;
 	}
 	this.writer.write("<br>");
+	this.writer.flush();
 }
 
-void append_parse_ctrlcodes(char[] text)
+void append_parse_ctrlcodes(char[] text, int off, int len)
 throws IOException
 {
+	int color_parsing = 0, fg = 0, bg = 0;
+	for (int i = off; i < len; i++) {
+		char c = text[i];
+		switch (color_parsing)
+		{
+		case 1:
+			if ('0' <= c && c <= '9') {
+				fg = c - '0';
+				color_parsing = 2;
+				continue;
+			}
+			break;
+		case 2:
+			if (c == ',') {
+				color_parsing = 4;
+				continue;
+			}
+			if ('0' <= c && c <= '9') {
+				fg = fg * 10 + c - '0';
+				color_parsing = 3;
+				continue;
+			}
+			this.color(fg);
+			break;
+		case 3:
+			if (c == ',') {
+				color_parsing = 4;
+				continue;
+			}
+			break;
+		case 4:
+			if ('0' <= c && c <= '9') {
+				bg = c - '0';
+				color_parsing = 5;
+				continue;
+			}
+			this.color(fg);
+			this.writer.write(',');
+			break;
+		case 5:
+			if ('0' <= c && c <= '9') {
+				bg = bg * 10 + c - '0';
+				color_parsing = 0;
+				this.color(fg, bg);
+				continue;
+			}
+			this.color(fg, bg);
+			break;
+		}
+		color_parsing = 0;
+		switch (c)
+		{
+		case CTRL_BOLD:
+			this.bold();
+			continue;
+		case CTRL_COLOR:
+			color_parsing = 1;
+			continue;
+		case CTRL_ITALIC:
+			this.italic();
+			continue;
+		case CTRL_STRIKETHROUGH:
+			this.strikethrough();
+			continue;
+		case CTRL_RESET:
+			this.reset();
+			continue;
+		case CTRL_UNDERLINE:
+		case CTRL_UNDERLINE2:
+			this.underline();
+			continue;
+		case CTRL_REVERSE:
+			this.reverse();
+			continue;
+		}
+		this.writer.write(c);
+	}
 }
 } /*LogWriter*/

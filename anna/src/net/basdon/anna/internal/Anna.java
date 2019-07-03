@@ -710,7 +710,7 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 	}
 
 	final char[] p = params;
-	this.mods_invoke("command", m -> m.on_command(user, target, replytarget, cmd, p));
+	this.mods_invoke("command", m -> m.on_command(user, target, replytarget, message, cmd, p));
 
 	if (strcmp(cmd, 'r','a','w') && params != null && is_owner(user)) {
 		send_raw(params, 0, params.length);
@@ -1260,6 +1260,13 @@ void channel_remove_user(char[] user, char[] channel)
 			}
 		}
 	}
+}
+
+@Override
+public
+User get_anna_user()
+{
+	return this.me;
 }
 
 @Override

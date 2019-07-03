@@ -63,12 +63,14 @@ void on_message(User user, char[] target, char[] replytarget, char[] message)
  * @param user user that sent the command, may (but should not) be {@code null}
  * @param target place where the message was sent to, channel or anna user if PM
  * @param replytarget target to reply to, channel or sending user if PM
+ * @param message the raw message (split into {@code cmd} and {@code params})
  * @param cmd cmd that was invoked
  * @param params parameters of the cmd as one single string, may be {@code null}
  * @return {@code true} if the command was handled (this value is currently unused)
  */
 default
-boolean on_command(User user, char[] target, char[] replytarget, char[] cmd, char[] params)
+boolean on_command(User user, char[] target, char[] replytarget,
+                   char[] message, char[] cmd, char[] params)
 {
 	return false;
 }

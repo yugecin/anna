@@ -12,7 +12,7 @@ timezone         -- timezone for dates and timestamps, in format:
 channel.channame -- output path for #channame channel, this should be
                     a directory. If it doesn't exist, a directory will
                     be created. Add one of these for every channel you
-                    want to log.
+                    want to log. Don't add the #.
 
 output
 ------

@@ -20,6 +20,10 @@ public interface IAnna
  */
 boolean load_mod_conf(IMod requester, Properties defaults);
 /**
+ * @return {@linke User} representing anna (not a copy, don't edit values)
+ */
+User get_anna_user();
+/**
  * @return a list of all joined channels (not a copy, don't edit this list)
  */
 ArrayList<Channel> get_joined_channels();
