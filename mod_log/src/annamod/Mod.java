@@ -27,7 +27,7 @@ static
 	defaultconf.setProperty("timezone", "");
 }
 
-private final HashMap<char[], ChannelLogger> loggers = new HashMap<>();
+private final HashMap<String, ChannelLogger> loggers = new HashMap<>();
 
 private Calendar calendar;
 
@@ -81,8 +81,10 @@ void config_loaded(Config conf)
 	}
 	this.calendar = Calendar.getInstance(tz);
 
-	long timestamp = System.currentTimeMillis();
-	Set<char[]> now_disabled_channels = this.loggers.keySet();
+	Long timestamp = new Long(System.currentTimeMillis());
+	for (ChannelLogger cl : this.loggers.values()) {
+		cl.should_disable = true;
+	}
 	for (Map.Entry<Object, Object> e : conf.props.entrySet()) {
 		Object key = e.getKey();
 		Object val = e.getValue();
@@ -91,7 +93,7 @@ void config_loaded(Config conf)
 			if (k.startsWith("channel.") && k.length() > 8) {
 				String channel = "#" + k.substring(8);
 				char[] chan = channel.toCharArray();
-				ChannelLogger cl = this.loggers.get(chan);
+				ChannelLogger cl = this.loggers.get(channel);
 				if (cl == null) {
 					File dir = new File((String) val);
 					if (!dir.exists()) {
@@ -109,19 +111,18 @@ void config_loaded(Config conf)
 					cl.channel = channel;
 					cl.chan = chan;
 					cl.directory = dir;
-					this.loggers.put(chan, cl);
+					this.loggers.put(channel, cl);
 				} else {
-					now_disabled_channels.remove(chan);
+					cl.should_disable = false;
 				}
 			}
 		}
 	}
 
-	Iterator<char[]> chans = now_disabled_channels.iterator();
+	Iterator<ChannelLogger> chans = this.loggers.values().iterator();
 	while (chans.hasNext()) {
-		char[] chan = chans.next();
-		ChannelLogger cl = this.loggers.get(chan);
-		if (cl != null) {
+		ChannelLogger cl = chans.next();
+		if (cl.should_disable) {
 			cl.close_stream();
 			chans.remove();
 		}
@@ -253,7 +254,7 @@ private
 LogWriter logger(char[] chan)
 {
 	ChannelLogger cl;
-	if ((cl = this.loggers.get(chan)) != null) {
+	if ((cl = this.loggers.get(new String(chan))) != null) {
 		return cl.get_or_open_stream();
 	}
 	return null;
@@ -273,8 +274,9 @@ Date time()
 
 class ChannelLogger
 {
+boolean should_disable;
 Mod mod;
-long timestamp;
+Long timestamp;
 int lastday;
 char[] chan;
 String channel;
@@ -284,8 +286,9 @@ OutputStreamWriter writer;
 LogWriter get_or_open_stream()
 {
 	int day = mod.calendar().get(Calendar.DAY_OF_YEAR);
-	if (this.writer == null || this.lastday != day) {
-		if (this.writer != null) {
+	boolean wasclosed;
+	if ((wasclosed = this.writer == null) || this.lastday != day) {
+		if (!wasclosed) {
 			close(this.writer);
 			this.writer = null;
 		}
@@ -298,9 +301,13 @@ LogWriter get_or_open_stream()
 		}
 		try {
 			this.writer = new OutputStreamWriter(new FileOutputStream(of), UTF_8);
-			String msg;
-			msg = format("<em>*** session open: %tH:%<tM:%<tS</em><br/>", mod.time());
-			this.writer.write(msg);
+			if (wasclosed) {
+				String msg = format(
+					"<em>*** session open: %tH:%<tM:%<tS</em><br/>",
+					this.timestamp
+				);
+				this.writer.write(msg);
+			}
 		} catch (IOException e) {
 			mod.anna.log_warn(e, "cannot create log file for " + channel);
 		}
