@@ -175,7 +175,7 @@ public
 void on_selfmessage(char[] target, char[] text, int offset, int len)
 {
 	char[] nick = this.anna.get_anna_user().nick;
-	this.log_standard_message(target, nick, COL_PINK, COL_WHITE, text, offset, len);
+	this.log_standard_message(target, nick, COL_BLACK, COL_WHITE, text, offset, len);
 }
 
 @Override
@@ -255,9 +255,10 @@ void log_standard_message(char[] target, char[] nick, int fg, int bg,
 			}
 			lw.timestamp(this.time());
 			if (nick != null) {
-				lw.writer.write("<");
+				lw.writer.write("&lt;");
+				// TODO: prefix
 				lw.writer.write(nick);
-				lw.writer.write("> ");
+				lw.writer.write("&gt; ");
 			}
 			lw.append_parse_ctrlcodes(message, off, len);
 			lw.lf();
@@ -316,7 +317,7 @@ LogWriter get_or_open_stream()
 			return null;
 		}
 		try {
-			this.writer = new OutputStreamWriter(new FileOutputStream(of), UTF_8);
+			this.writer = new OutputStreamWriter(new FileOutputStream(of, true), UTF_8);
 			if (wasclosed) {
 				String msg = format(
 					"<em>*** session open: %tH:%<tM:%<tS</em><br/>",
@@ -352,7 +353,7 @@ void close_stream()
 class LogWriter
 {
 private static final String[] COLORS = {
-	"000", "FFF", "00007F", "009300", "F00", "7F0000", "9C009C",
+	"FFF", "000", "00007F", "009300", "F00", "7F0000", "9C009C",
 	"FC7F00", "FF0", "00FC00", "009393", "0FF", "0000FC", "F0F",
 	"7F7F7F", "D2D2D2"
 };
@@ -385,23 +386,20 @@ throws IOException
 	} else {
 		this.styles[STYLE_BOLD] = "font-weight:bold";
 	}
-	this.writer.write("<wbr data-ctrl=\"2");
+	this.writer.write("<wbr data-ctrl=\"2\">");
 	this.add_formatting();
 }
 
 void color(int fg)
 throws IOException
 {
-	if (this.has_span) {
-		this.writer.write("</span>");
-	}
 	if (fg < 0 || 15 < fg) {
 		fg = COL_BLACK;
 	}
 	this.writer.write("<wbr data-ctrl=\"3");
 	this.writer.write(COLORMAP[fg]);
 	this.writer.write("\">");
-	this.styles[STYLE_FG] = "text-color:#" + COLORS[fg] + ";";
+	this.styles[STYLE_FG] = "color:#" + COLORS[fg];
 	this.add_formatting();
 }
 
@@ -421,7 +419,7 @@ throws IOException
 	this.writer.write(',');
 	this.writer.write(COLORMAP[bg]);
 	this.writer.write("\">");
-	this.styles[STYLE_FG] = "text-color:#" + COLORS[fg];
+	this.styles[STYLE_FG] = "color:#" + COLORS[fg];
 	this.styles[STYLE_BG] = "background:#" + COLORS[bg];
 	this.add_formatting();
 }
@@ -434,7 +432,7 @@ throws IOException
 	} else {
 		this.styles[STYLE_ITALIC] = "font-style:italic";
 	}
-	this.writer.write("<wbr data-ctrl=\"9");
+	this.writer.write("<wbr data-ctrl=\"9\">");
 	this.add_formatting();
 }
 
@@ -446,7 +444,7 @@ throws IOException
 	} else {
 		this.styles[STYLE_STRIKETHROUGH] = "text-decoration:line-through";
 	}
-	this.writer.write("<wbr data-ctrl=\"13");
+	this.writer.write("<wbr data-ctrl=\"13\">");
 	this.add_formatting();
 }
 
@@ -456,7 +454,7 @@ throws IOException
 	for (int i = 0; i < this.styles.length; i++) {
 		this.styles[i] = null;
 	}
-	this.writer.write("<wbr data-ctrl=\"15");
+	this.writer.write("<wbr data-ctrl=\"15\">");
 	this.add_formatting();
 }
 
@@ -468,7 +466,7 @@ throws IOException
 	} else {
 		this.styles[STYLE_UNDERLINE] = "text-decoration:underline";
 	}
-	this.writer.write("<wbr data-ctrl=\"21");
+	this.writer.write("<wbr data-ctrl=\"21\">");
 	this.add_formatting();
 }
 
@@ -478,9 +476,9 @@ throws IOException
 	if (this.styles[STYLE_REVERSE] != null) {
 		this.styles[STYLE_REVERSE] = null;
 	} else {
-		this.styles[STYLE_REVERSE] = "font-color:#fff;background:#000";
+		this.styles[STYLE_REVERSE] = "color:#fff;background:#000";
 	}
-	this.writer.write("<wbr data-ctrl=\"22");
+	this.writer.write("<wbr data-ctrl=\"22\">");
 	this.add_formatting();
 }
 
@@ -488,6 +486,10 @@ private
 void add_formatting()
 throws IOException
 {
+	if (this.has_span) {
+		this.writer.write("</span>");
+		this.has_span = false;
+	}
 	out:
 	{
 		for (int i = 0; i < this.styles.length; i++) {
@@ -495,11 +497,7 @@ throws IOException
 				break out;
 			}
 		}
-		this.has_span = false;
 		return;
-	}
-	if (this.has_span) {
-		this.writer.write("</span>");
 	}
 	this.writer.write("<span style=\"");
 	for (int i = 0; i < this.styles.length; i++) {
@@ -541,6 +539,9 @@ throws IOException
 	if (this.has_span) {
 		this.writer.write("</span>");
 		this.has_span = false;
+	}
+	for (int i = 0; i < this.styles.length; i++) {
+		this.styles[i] = null;
 	}
 	this.writer.write("<br>");
 	this.writer.flush();
@@ -625,7 +626,11 @@ throws IOException
 			this.reverse();
 			continue;
 		}
-		this.writer.write(c);
+		if (c < ' ' || c == '&' || c == '<' || c == '>' || c > '~') {
+			this.writer.write("&#" + String.valueOf((int) c) + ";");
+		} else {
+			this.writer.write(c);
+		}
 	}
 }
 } /*LogWriter*/
