@@ -59,6 +59,21 @@ public
 void print_stats(Output output)
 throws IOException
 {
+	for (ChannelLogger l : this.loggers.values()) {
+		output.print(" ");
+		output.print(l.chan, 0, l.chan.length);
+		output.print(": lastday: ");
+		output.print(String.valueOf(l.lastday));
+		output.print(", lines: ");
+		output.print(String.valueOf(l.lineswritten));
+		output.print(", stream: ");
+		if (l.writer != null) {
+			output.print("open");
+		} else {
+			output.print("closed");
+		}
+		output.print("\n");
+	}
 }
 
 @Override
@@ -282,6 +297,7 @@ char[] chan;
 String channel;
 File directory;
 OutputStreamWriter writer;
+int lineswritten;
 
 LogWriter get_or_open_stream()
 {
@@ -315,7 +331,7 @@ LogWriter get_or_open_stream()
 	if (this.writer == null) {
 		return null;
 	}
-	return new LogWriter(this.writer);
+	return new LogWriter(this);
 }
 
 void close_stream()
@@ -349,14 +365,16 @@ private static final int
 	STYLE_STRIKETHROUGH = 5,
 	STYLE_REVERSE = 6;
 
+final ChannelLogger logger;
 final OutputStreamWriter writer;
 
 boolean has_span;
 String[] styles = new String[7];
 
-LogWriter(OutputStreamWriter writer)
+LogWriter(ChannelLogger logger)
 {
-	this.writer = writer;
+	this.logger = logger;
+	this.writer = logger.writer;
 }
 
 void bold()
@@ -526,6 +544,7 @@ throws IOException
 	}
 	this.writer.write("<br>");
 	this.writer.flush();
+	this.logger.lineswritten++;
 }
 
 void append_parse_ctrlcodes(char[] text, int off, int len)
