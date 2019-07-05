@@ -58,7 +58,11 @@ conf <modname> <setting> -- view or change a configuration setting,
                             setting must be a single space. Changing
                             a setting will immediately save the conf
                             file and notice the mod that settings
-                            have been changed.
+                            have been changed. The setting must already
+                            exist, use the 'confadd' command otherwise.
+confadd <modname>        -- add a configuration setting, analogue
+        <setting>           to the 'conf' command
+        <value>
 
 stats
 -----

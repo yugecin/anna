@@ -934,7 +934,12 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 		return;
 	}
 
-	if (strcmp(cmd, 'c','o','n','f') && is_owner(user)) {
+	boolean addconf = false;
+	if (is_owner(user) && (
+			(strcmp(cmd, 'c','o','n','f')) ||
+			(strcmp(cmd, 'c','o','n','f','a','d','d') && (addconf = true))
+		))
+	{
 		int space, space2;
 		if (params == null ||
 			(space = indexOf(params, 0, params.length, ' ')) == -1 ||
@@ -959,7 +964,7 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 		int to = space2 == -1 ? params.length : space2;
 		String key = new String(params, space + 1, to - space - 1);
 		String val = conf.props.getProperty(key);
-		if (val == null) {
+		if (val == null && !addconf) {
 			this.privmsg(replytarget, "unknown prop".toCharArray());
 			return;
 		}
