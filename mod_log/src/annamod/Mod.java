@@ -476,7 +476,7 @@ throws IOException
 	if (this.styles[STYLE_REVERSE] != null) {
 		this.styles[STYLE_REVERSE] = null;
 	} else {
-		this.styles[STYLE_REVERSE] = "color:#fff;background:#000";
+		this.styles[STYLE_REVERSE] = "color:#FFF;background:#000";
 	}
 	this.writer.write("<wbr data-ctrl=\"22\">");
 	this.add_formatting();
@@ -580,6 +580,7 @@ throws IOException
 				color_parsing = 4;
 				continue;
 			}
+			this.color(fg);
 			break;
 		case 4:
 			if ('0' <= c && c <= '9') {
