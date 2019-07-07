@@ -167,7 +167,26 @@ public
 void on_action(User user, char[] target, char[] replytarget, char[] action)
 {
 	char[] nick = user == null ? null : user.nick;
-	this.log_standard_message(target, nick, COL_PINK, COL_WHITE, action, 0, action.length);
+	LogWriter lw = this.logger(target);
+	if (lw != null) {
+		try {
+			lw.color(COL_PINK);
+			lw.timestamp(this.time());
+			lw.writer.write("* ");
+			if (nick != null) {
+				ChannelUser usr = this.anna.find_user(target, nick);
+				if (usr != null && usr.prefix != 0) {
+					lw.writer.write("&#");
+					lw.writer.write(String.valueOf((int) usr.prefix));
+					lw.writer.write(";");
+				}
+				lw.writer.write(nick);
+				lw.writer.write(' ');
+			}
+			lw.append_parse_ctrlcodes(action, 0, action.length);
+			lw.lf();
+		} catch (IOException ignored) {}
+	}
 }
 
 @Override
