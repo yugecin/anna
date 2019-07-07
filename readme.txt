@@ -63,6 +63,8 @@ conf <modname> <setting> -- view or change a configuration setting,
 confadd <modname>        -- add a configuration setting, analogue
         <setting>           to the 'conf' command
         <value>
+reloadconf <modname>     -- reload the configuration file of a mod.
+                            Use 'anna' as modname for core config.
 
 stats
 -----

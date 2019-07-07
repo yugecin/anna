@@ -75,6 +75,13 @@ String getDescription()
 }
 
 @Override
+public
+Properties get_default_conf()
+{
+	return defaultconf;
+}
+
+@Override
 public boolean on_enable(IAnna anna)
 {
 	this.anna = anna;
@@ -83,7 +90,7 @@ public boolean on_enable(IAnna anna)
 		return false;
 	}
 
-	anna.load_mod_conf(this, defaultconf);
+	anna.load_mod_conf(this);
 	return true;
 }
 

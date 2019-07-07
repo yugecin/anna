@@ -3,6 +3,7 @@
 package net.basdon.anna.api;
 
 import java.io.IOException;
+import java.util.Properties;
 
 public interface IMod
 {
@@ -25,7 +26,14 @@ String getDescription();
  */
 void print_stats(IAnna.Output output)
 throws IOException;
-
+/**
+ * @return default properties for conf, may be {@code null}
+ */
+default
+Properties get_default_conf()
+{
+	return null;
+}
 /**
  * Called when this mod is being loaded.
  * @return {@code false} if it's not possible to enable this mod

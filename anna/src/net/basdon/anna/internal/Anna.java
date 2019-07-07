@@ -95,7 +95,7 @@ char[] prefixes, modes;
  */
 char[] chanmodes_a, chanmodes_b, chanmodes_c, chanmodes_d;
 
-final ConfigImpl conf;
+ConfigImpl conf;
 
 Output writer;
 
@@ -232,10 +232,10 @@ void ensure_stats_server(int port)
 
 @Override
 public
-boolean load_mod_conf(IMod requester, Properties defaults)
+boolean load_mod_conf(IMod requester)
 {
 	String modname = requester.getName();
-	ConfigImpl conf = ConfigImpl.load(modname, defaults);
+	ConfigImpl conf = ConfigImpl.load(modname, requester.get_default_conf());
 	if (conf == null) {
 		this.modconfigs.remove(modname);
 		return false;
@@ -989,6 +989,44 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 			}
 		}
 		this.privmsg(replytarget, (key + ": " + val).toCharArray());
+		return;
+	}
+
+	if (strcmp(cmd, 'r','e','l','o','a','d','c','o','n','f') && is_owner(user)) {
+		if (params == null || params.length == 0) {
+			this.privmsg(replytarget, "reloadconf modname".toCharArray());
+			return;
+		}
+		success:
+		{
+			fail:
+			{
+				ConfigImpl conf;
+				if (strcmp(params, 'a','n','n','a')) {
+					conf = ConfigImpl.load("anna", default_config);
+					if (conf != null) {
+						this.conf = conf;
+						this.config_loaded();
+						break success;
+					}
+				} else {
+					String modname = new String(params, 0, params.length);
+					for (IMod m : this.mods) {
+						if (modname.equals(m.getName())) {
+							if (this.load_mod_conf(m)) {
+								break success;
+							}
+							break fail;
+						}
+					}
+					this.privmsg(replytarget, "no such mod".toCharArray());
+					return;
+				}
+			}
+			this.privmsg(replytarget, "failed to load conf".toCharArray());
+			return;
+		}
+		this.privmsg(replytarget, "reloaded".toCharArray());
 		return;
 	}
 }
