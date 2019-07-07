@@ -167,26 +167,7 @@ public
 void on_action(User user, char[] target, char[] replytarget, char[] action)
 {
 	char[] nick = user == null ? null : user.nick;
-	LogWriter lw = this.logger(target);
-	if (lw != null) {
-		try {
-			lw.color(COL_PINK);
-			lw.timestamp(this.time());
-			lw.writer.write("* ");
-			if (nick != null) {
-				ChannelUser usr = this.anna.find_user(target, nick);
-				if (usr != null && usr.prefix != 0) {
-					lw.writer.write("&#");
-					lw.writer.write(String.valueOf((int) usr.prefix));
-					lw.writer.write(";");
-				}
-				lw.writer.write(nick);
-				lw.writer.write(' ');
-			}
-			lw.append_parse_ctrlcodes(action, 0, action.length);
-			lw.lf();
-		} catch (IOException ignored) {}
-	}
+	this.log_action_message(target, nick, action, 0, action.length);
 }
 
 @Override
@@ -202,7 +183,7 @@ public
 void on_selfaction(char[] target, char[] text)
 {
 	char[] nick = this.anna.get_anna_user().nick;
-	this.log_standard_message(target, nick, COL_PINK, COL_WHITE, text, 0, text.length);
+	this.log_action_message(target, nick, text, 0, text.length);
 }
 
 @Override
@@ -319,6 +300,34 @@ void log_standard_message(char[] target, char[] nick, int fg, int bg,
 				lw.writer.write("&gt; ");
 			}
 			lw.append_parse_ctrlcodes(message, off, len);
+			lw.lf();
+		} catch (IOException ignored) {}
+	}
+}
+
+/**
+ * @param nick may be {@code null}
+ */
+private
+void log_action_message(char[] target, char[] nick, char[] action, int off, int len)
+{
+	LogWriter lw = this.logger(target);
+	if (lw != null) {
+		try {
+			lw.color(COL_PINK);
+			lw.timestamp(this.time());
+			lw.writer.write("* ");
+			if (nick != null) {
+				ChannelUser usr = this.anna.find_user(target, nick);
+				if (usr != null && usr.prefix != 0) {
+					lw.writer.write("&#");
+					lw.writer.write(String.valueOf((int) usr.prefix));
+					lw.writer.write(";");
+				}
+				lw.writer.write(nick);
+				lw.writer.write(' ');
+			}
+			lw.append_parse_ctrlcodes(action, 0, action.length);
 			lw.lf();
 		} catch (IOException ignored) {}
 	}
