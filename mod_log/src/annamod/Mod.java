@@ -190,6 +190,23 @@ void on_selfaction(char[] target, char[] text)
 public
 void on_topic(User user, char[] channel, char[] topic)
 {
+	LogWriter lw = this.logger(channel);
+	if (lw != null) {
+		try {
+			lw.color(COL_LIGHTBLUE);
+			lw.timestamp(this.time());
+			if (user != null) {
+				lw.writer.write("*** ");
+				lw.writer.write(user.nick);
+				lw.writer.write(" changes topic to '");
+			} else {
+				lw.writer.write("*** topic has been changed to '");
+			}
+			lw.append_parse_ctrlcodes(topic, 0, topic.length);
+			lw.writer.write('\'');
+			lw.lf();
+		} catch (IOException ignored) {}
+	}
 }
 
 @Override
@@ -197,6 +214,23 @@ public
 void on_channelmodechange(Channel chan, User user, int changec, char[] signs, char[] modes,
                           char[] types, char[][] params, ChannelUser[] users)
 {
+	LogWriter lw = this.logger(chan.name);
+	if (lw != null) {
+		try {
+			lw.color(COL_CYAN);
+			lw.timestamp(this.time());
+			if (user != null) {
+				lw.writer.write("*** ");
+				lw.writer.write(user.nick);
+				lw.writer.write(" sets mode: ");
+			} else {
+				lw.writer.write("*** channel mode changed: ");
+			}
+			char[] c = chars(make_modestr(changec, signs, modes, types, params));
+			lw.append_escape(c, 0, c.length);
+			lw.lf();
+		} catch (IOException ignored) {}
+	}
 }
 
 @Override
@@ -557,8 +591,9 @@ void append_parse_ctrlcodes(char[] text, int off, int len)
 throws IOException
 {
 	int color_parsing = 0, fg = 0, bg = 0;
-	for (int i = off; i < len; i++) {
-		char c = text[i];
+	len += off;
+	while (off < len) {
+		char c = text[off++];
 		switch (color_parsing)
 		{
 		case 1:
@@ -632,6 +667,20 @@ throws IOException
 			this.reverse();
 			continue;
 		}
+		if (c < ' ' || c == '&' || c == '<' || c == '>' || c > '~') {
+			this.writer.write("&#" + String.valueOf((int) c) + ";");
+		} else {
+			this.writer.write(c);
+		}
+	}
+}
+
+void append_escape(char[] text, int off, int len)
+throws IOException
+{
+	len += off;
+	while (off < len) {
+		char c = text[off++];
 		if (c < ' ' || c == '&' || c == '<' || c == '>' || c > '~') {
 			this.writer.write("&#" + String.valueOf((int) c) + ";");
 		} else {
