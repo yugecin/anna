@@ -356,7 +356,11 @@ LogWriter get_or_open_stream()
 			return null;
 		}
 		try {
+			boolean existed = of.exists();
 			this.writer = new OutputStreamWriter(new FileOutputStream(of, true), UTF_8);
+			if (!existed) {
+				this.writer.write("<style>html{font-family:monospace}</style>\n");
+			}
 			if (wasclosed) {
 				String msg = format(
 					"<em>*** session open: %tH:%<tM:%<tS</em><br/>",
