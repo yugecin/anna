@@ -65,6 +65,7 @@ confadd <modname>        -- add a configuration setting, analogue
         <value>
 reloadconf <modname>     -- reload the configuration file of a mod.
                             Use 'anna' as modname for core config.
+mods                     -- print the list of loaded mods
 
 stats
 -----

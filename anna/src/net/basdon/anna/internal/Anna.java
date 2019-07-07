@@ -1029,6 +1029,15 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 		this.privmsg(replytarget, "reloaded".toCharArray());
 		return;
 	}
+
+	if (strcmp(cmd, 'm','o','d','s')) {
+		StringBuilder sb = new StringBuilder("loaded mods:");
+		for (IMod mod : this.mods) {
+			sb.append(' ').append(mod.getName());
+		}
+		this.privmsg(replytarget, chars(sb));
+		return;
+	}
 }
 
 /**
