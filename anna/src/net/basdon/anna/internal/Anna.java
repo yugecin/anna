@@ -1547,7 +1547,7 @@ void dispatch(Anna anna)
 	}
 }
 
-void shedule(Anna anna)
+void schedule(Anna anna)
 {
 	anna.chanmode_updates.add(this);
 }

@@ -117,8 +117,7 @@ void mode_changed(Anna anna, User user, char[][] paramv, int paramc)
 		set(buf, 0, 'N','A','M','E','S',' ');
 		arraycopy(chan, 0, buf, 6, chan.length);
 		anna.send_raw(buf, 0, buf.length);
-
-		umc.shedule(anna);
+		umc.schedule(anna);
 	} else {
 		umc.dispatch(anna);
 	}
