@@ -217,7 +217,7 @@ void on_channelmodechange(Channel chan, User user, int changec, char[] signs, ch
 	LogWriter lw = this.logger(chan.name);
 	if (lw != null) {
 		try {
-			lw.color(COL_CYAN);
+			lw.color(COL_TEAL);
 			lw.timestamp(this.time());
 			if (user != null) {
 				lw.writer.write("*** ");
