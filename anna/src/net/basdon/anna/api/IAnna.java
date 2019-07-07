@@ -32,6 +32,10 @@ ArrayList<Channel> get_joined_channels();
  */
 Channel find_channel(char[] channel);
 /**
+ * @return found user or {@code null}
+ */
+ChannelUser find_user(char[] channel, char[] nick);
+/**
  * @return array of all known user channel modes (not a copy, don't edit this array)
  */
 char[] get_user_channel_modes();

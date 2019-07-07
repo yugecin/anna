@@ -256,7 +256,12 @@ void log_standard_message(char[] target, char[] nick, int fg, int bg,
 			lw.timestamp(this.time());
 			if (nick != null) {
 				lw.writer.write("&lt;");
-				// TODO: prefix
+				ChannelUser usr = this.anna.find_user(target, nick);
+				if (usr != null && usr.prefix != 0) {
+					lw.writer.write("&#");
+					lw.writer.write(String.valueOf((int) usr.prefix));
+					lw.writer.write(";");
+				}
 				lw.writer.write(nick);
 				lw.writer.write("&gt; ");
 			}

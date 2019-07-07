@@ -1294,6 +1294,27 @@ public Channel find_channel(char[] channel)
 
 @Override
 public
+ChannelUser find_user(char[] channel, char[] nick)
+{
+	int i = this.joined_channels.size();
+	while (i-- > 0) {
+		Channel chan = this.joined_channels.get(i);
+		if (strcmp(channel, chan.name)) {
+			i = chan.userlist.size();
+			while (i-- > 0) {
+				ChannelUser usr = chan.userlist.get(i);
+				if (strcmp(nick, usr.nick)) {
+					return usr;
+				}
+			}
+			return null;
+		}
+	}
+	return null;
+}
+
+@Override
+public
 char[] get_user_channel_modes()
 {
 	return this.modes;
