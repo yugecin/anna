@@ -272,9 +272,8 @@ throws IOException
 			while (j-- > 0) {
 				out.print(" ");
 				ChannelUser usr = chan.userlist.get(j);
-				int prefixidx = this.user_get_highest_mode_idx(usr);
-				if (prefixidx != this.modes.length) {
-					out.print(this.prefixes, prefixidx, 1);
+				if (usr.prefix != 0) {
+					out.print(String.valueOf(usr.prefix));
 				}
 				out.print(usr.nick, 0, usr.nick.length);
 			}
@@ -503,8 +502,8 @@ void dispatch_message0(Message msg)
 		return;
 	}
 
-	// <- :Anna^!Anna@EXP-93BCB88D.access.telenet.be KICK #anna robin_be :bai
-	// <- :Anna^!Anna@EXP-93BCB88D.access.telenet.be KICK #anna robin_be
+	// <- :Anna^!Anna@* KICK #anna robin_be :bai
+	// <- :Anna^!Anna@* KICK #anna robin_be
 	if (strcmp(msg.cmd, CMD_KICK) && user != null && msg.paramc > 1) {
 		handle_kick(user, msg.paramv[0], msg.paramv[1], msg.paramv[2]);
 		return;
@@ -552,7 +551,7 @@ void dispatch_message0(Message msg)
 			arraycopy(users, off, nick, 0, len);
 			ChannelUserImpl usr = chan.get_or_add_user(nick);
 			if (mode != 0) {
-				usr.mode_add(mode);
+				usr.mode_add(mode, this.modes, this.prefixes);
 			}
 			off = nextoffset + 1;
 		}
@@ -774,9 +773,8 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 		while (i-- > 0) {
 			sb.append(' ');
 			ChannelUser usr = chan.userlist.get(i);
-			int prefixidx = this.user_get_highest_mode_idx(usr);
-			if (prefixidx != this.modes.length) {
-				sb.append(this.prefixes[prefixidx]);
+			if (usr.prefix != 0) {
+				sb.append(usr.prefix);
 			}
 			sb.append(usr.nick);
 			sb.append('Z'); // to not nickalert everyone
@@ -1305,22 +1303,7 @@ char[] get_user_channel_modes()
 public
 char[] get_user_channel_prefixes()
 {
-	return this.modes;
-}
-
-@Override
-public
-int user_get_highest_mode_idx(ChannelUser usr)
-{
-	int prefixidx = this.modes.length;
-	int modei = usr.modec;
-	while (modei-- > 0) {
-		int idx = array_idx(this.modes, usr.modev[modei]);
-		if (idx != -1 && idx < prefixidx) {
-			prefixidx = idx;
-		}
-	}
-	return prefixidx;
+	return this.prefixes;
 }
 
 @Override

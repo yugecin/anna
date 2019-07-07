@@ -6,7 +6,14 @@ public abstract class ChannelUser
 {
 public char[] nick;
 public int modec;
+/**
+ * modes this user has, sorted
+ */
 public char[] modev;
+/**
+ * prefix that should be shown, or {@code 0}
+ */
+public char prefix;
 
 protected ChannelUser()
 {

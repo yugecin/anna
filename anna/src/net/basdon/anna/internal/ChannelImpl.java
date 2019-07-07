@@ -39,6 +39,8 @@ void mode_changed(Anna anna, char[][] paramv, int paramc)
 {
 	boolean need_user_update = false;
 
+	char[] modes = anna.get_user_channel_modes();
+	char[] prefixes = anna.get_user_channel_prefixes();
 	char[] chan = paramv[0];
 	char[] change = paramv[1];
 	int paramidx = 2;
@@ -85,10 +87,10 @@ void mode_changed(Anna anna, char[][] paramv, int paramc)
 					usr = (ChannelUserImpl) this.userlist.get(j);
 					if (strcmp(nick, usr.nick)) {
 						if (sign == '-') {
-							usr.mode_remove(c);
+							usr.mode_remove(c, modes, prefixes);
 							need_user_update = true;
 						} else {
-							usr.mode_add(c);
+							usr.mode_add(c, modes, prefixes);
 						}
 						umc.types[umc.changec] = 'u';
 						umc.users[umc.changec] = usr;

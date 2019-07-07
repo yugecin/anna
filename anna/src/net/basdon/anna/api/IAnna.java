@@ -40,12 +40,6 @@ char[] get_user_channel_modes();
  */
 char[] get_user_channel_prefixes();
 /**
- * @return index of the highest mode in the array returned by {@link #get_user_channel_modes()} and
- *         {@link #get_user_channel_prefixes()}, or the length of those arrays if the user doesn't
- *         have any of those modes
- */
-int user_get_highest_mode_idx(ChannelUser usr);
-/**
  * check if given user is listed as an Anna owner in the config
  */
 boolean is_owner(User user);
