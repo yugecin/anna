@@ -214,7 +214,7 @@ void on_topic(User user, char[] channel, char[] topic)
 			lw.timestamp(this.time());
 			if (user != null) {
 				lw.writer.write("*** ");
-				lw.writer.write(user.nick);
+				lw.append_escape(user.nick, 0, user.nick.length);
 				lw.writer.write(" changes topic to '");
 			} else {
 				lw.writer.write("*** topic has been changed to '");
@@ -238,7 +238,7 @@ void on_channelmodechange(Channel chan, User user, int changec, char[] signs, ch
 			lw.timestamp(this.time());
 			if (user != null) {
 				lw.writer.write("*** ");
-				lw.writer.write(user.nick);
+				lw.append_escape(user.nick, 0, user.nick.length);
 				lw.writer.write(" sets mode: ");
 			} else {
 				lw.writer.write("*** channel mode changed: ");
@@ -252,32 +252,84 @@ void on_channelmodechange(Channel chan, User user, int changec, char[] signs, ch
 
 @Override
 public
-void on_nickchange(User user, char[] newnick)
+void on_nickchange(User user, char[] oldnick, char[] newnick)
 {
+	ArrayList<Channel> chans = this.anna.get_joined_channels();
+	int i = chans.size();
+	while (i-- > 0) {
+		Channel chan = chans.get(i);
+		ChannelUser usr = chan.find_user(newnick);
+		LogWriter lw;
+		if (usr != null && (lw = this.logger(chan.name)) != null) {
+			try {
+				lw.color(COL_PINK);
+				lw.timestamp(this.time());
+				lw.writer.write("*** ");
+				lw.append_escape(oldnick, 0, oldnick.length);
+				lw.writer.write(" is now known as ");
+				lw.append_escape(newnick, 0, newnick.length);
+				lw.lf();
+			} catch (IOException ignored) {}
+		}
+	}
 }
 
 @Override
 public
 void on_kick(User user, char[] channel, char[] kickeduser, char[] msg)
 {
+	LogWriter lw = this.logger(channel);
+	if (lw != null) {
+		try {
+			lw.color(COL_RED);
+			lw.timestamp(this.time());
+			lw.writer.write("*** ");
+			lw.append_escape(kickeduser, 0, kickeduser.length);
+			if (user != null) {
+				lw.writer.write(" was kicked by ");
+				lw.append_escape(user.nick, 0, user.nick.length);
+			} else {
+				lw.writer.write(" was kicked");
+			}
+			if (msg != null) {
+				lw.writer.write(" (");
+				lw.append_parse_ctrlcodes(msg, 0, msg.length);
+				lw.reset();
+				lw.color(COL_RED);
+				lw.writer.write(')');
+			}
+			lw.lf();
+		} catch (IOException ignored) {}
+	}
 }
 
 @Override
 public
 void on_part(User user, char[] channel, char[] msg)
 {
+	this.log_joinpartquit(channel, user.nick, "Part", COL_LIGHTGREY, msg);
 }
 
 @Override
 public
 void on_quit(User user, char[] msg)
 {
+	ArrayList<Channel> chans = this.anna.get_joined_channels();
+	int i = chans.size();
+	while (i-- > 0) {
+		Channel chan = chans.get(i);
+		ChannelUser usr = chan.find_user(user.nick);
+		if (usr != null) {
+			this.log_joinpartquit(chan.name, user.nick, "Quit", COL_LIGHTGREY, msg);
+		}
+	}
 }
 
 @Override
 public
 void on_join(User user, char[] channel)
 {
+	this.log_joinpartquit(channel, user.nick, "Join", COL_GREY, null);
 }
 
 @Override
@@ -313,7 +365,7 @@ void log_standard_message(char[] target, char[] nick, int fg, int bg,
 					lw.writer.write(String.valueOf((int) usr.prefix));
 					lw.writer.write(";");
 				}
-				lw.writer.write(nick);
+				lw.append_escape(nick, 0, nick.length);
 				lw.writer.write("&gt; ");
 			}
 			lw.append_parse_ctrlcodes(message, off, len);
@@ -341,10 +393,34 @@ void log_action_message(char[] target, char[] nick, char[] action, int off, int 
 					lw.writer.write(String.valueOf((int) usr.prefix));
 					lw.writer.write(";");
 				}
-				lw.writer.write(nick);
+				lw.append_escape(nick, 0, nick.length);
 				lw.writer.write(' ');
 			}
 			lw.append_parse_ctrlcodes(action, 0, action.length);
+			lw.lf();
+		} catch (IOException ignored) {}
+	}
+}
+
+private
+void log_joinpartquit(char[] channel, char[] nick, String type, int color, char[] msg)
+{
+	LogWriter lw = this.logger(channel);
+	if (lw != null) {
+		try {
+			lw.color(color);
+			lw.timestamp(this.time());
+			lw.writer.write("*** ");
+			lw.writer.write(type);
+			lw.writer.write("s: ");
+			lw.append_escape(nick, 0, nick.length);
+			if (msg != null) {
+				lw.writer.write(" (");
+				lw.append_parse_ctrlcodes(msg, 0, msg.length);
+				lw.reset();
+				lw.color(color);
+				lw.writer.write(')');
+			}
 			lw.lf();
 		} catch (IOException ignored) {}
 	}

@@ -150,11 +150,12 @@ void on_channelmodechange(Channel chan, User user, int changec, char[] signs, ch
 /**
  * Called when a user changes their nick.
  *
- * @param user user that changed their nick (this has the old name)
+ * @param user user that changed their nick (this should have the new name)
+ * @param oldnick the old nickname of this user
  * @param newnick the new nickname of this user
  */
 default
-void on_nickchange(User user, char[] newnick)
+void on_nickchange(User user, char[] oldnick, char[] newnick)
 {
 }
 /**

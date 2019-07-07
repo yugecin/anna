@@ -158,11 +158,12 @@ void on_channelmodechange(Channel chan, User user, int changec, char[] signs, ch
 }
 
 @Override
-public void on_nickchange(User user, char[] newnick)
+public void on_nickchange(User user, char[] oldnick, char[] newnick)
 {
 	out.printf(
-		"mod_test: on_nickchange user: %s newnick: %s%n",
+		"mod_test: on_nickchange user: %s oldnick: %s newnick: %s%n",
 		user.toString(),
+		new String(oldnick),
 		new String(newnick)
 	);
 }

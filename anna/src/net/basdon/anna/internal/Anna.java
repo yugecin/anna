@@ -656,6 +656,7 @@ void handle_kick(User user, char[] channel, char[] kickeduser, char[] msg)
  */
 void handle_nick(User user, char[] newnick)
 {
+	char[] oldnick = user.nick;
 	if (strcmp(me.nick, user.nick)) {
 		me.nick = newnick;
 	}
@@ -671,7 +672,7 @@ void handle_nick(User user, char[] newnick)
 			}
 		}
 	}
-	this.mods_invoke("nickchange", m -> m.on_nickchange(user, newnick));
+	this.mods_invoke("nickchange", m -> m.on_nickchange(user, oldnick, newnick));
 }
 
 /**
