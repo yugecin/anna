@@ -136,13 +136,15 @@ void on_topic(User user, char[] channel, char[] topic)
 
 @Override
 public
-void on_channelmodechange(Channel chan, int changec, char[] signs, char[] modes,
+void on_channelmodechange(Channel chan, User user, int changec, char[] signs, char[] modes,
                           char[] types, char[][] params, ChannelUser[] users)
 {
 	for (int i = 0; i < changec; i++) {
 		out.printf(
-			"mod_test: on_usermodechanged chan: %s sign: %s mode: %s param: %s%n",
+			"mod_test: on_usermodechanged chan:"
+			+ "%s user: %s sign: %s mode: %s param: %s%n",
 			new String(chan.name),
+			user == null ? "null" : new String(user.nick),
 			String.valueOf(signs[i]),
 			String.valueOf(modes[i]),
 			params[i] == null ? "" : new String(params[i])

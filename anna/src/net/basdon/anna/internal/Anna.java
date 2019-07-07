@@ -472,7 +472,7 @@ void dispatch_message0(Message msg)
 			ChannelImpl chan = this.channel_find(target);
 			if (chan != null) {
 				if (msg.paramc > 1) {
-					chan.mode_changed(this, msg.paramv, msg.paramc);
+					chan.mode_changed(this, user, msg.paramv, msg.paramc);
 				} else {
 					Log.warn("MODE for channel but not enough params");
 				}
@@ -1037,6 +1037,7 @@ void handle_topic(User user, char[] channel, char[] topic)
  * Called when one or more channel modes have been changed.
  *
  * @param chan affecting channel
+ * @param user user that invoked the mode change
  * @param changec amount of changes (don't use the array lenghts)
  * @param signs signs of each change, either {@code +} or {@code -}
  * @param modes modes of each change
@@ -1046,11 +1047,11 @@ void handle_topic(User user, char[] channel, char[] topic)
  *               type c with positive sign
  * @param users user when {@code type} is user
  */
-void handle_channelmodechange(ChannelImpl chan, int changec, char[] signs, char[] modes,
+void handle_channelmodechange(ChannelImpl chan, User user, int changec, char[] signs, char[] modes,
                               char[] types, char[][] params, ChannelUser[] users)
 {
 	this.mods_invoke("channelmodechange", m ->
-		m.on_channelmodechange(chan, changec, signs, modes, types, params, users)
+		m.on_channelmodechange(chan, user, changec, signs, modes, types, params, users)
 	);
 }
 
@@ -1462,6 +1463,7 @@ static
 class BufferedChanModeChange
 {
 ChannelImpl chan;
+User user;
 /**
  * amount of elements in {@code users}, {@code signs}, {@code modes}, {@code types}
  */
@@ -1472,9 +1474,10 @@ char[] types;
 char[][] params;
 ChannelUser[] users;
 
-BufferedChanModeChange(ChannelImpl chan, int maxc)
+BufferedChanModeChange(ChannelImpl chan, User user, int maxc)
 {
 	this.chan = chan;
+	this.user = user;
 	this.users = new ChannelUser[maxc];
 	this.signs = new char[maxc];
 	this.modes = new char[maxc];
@@ -1485,7 +1488,8 @@ BufferedChanModeChange(ChannelImpl chan, int maxc)
 void dispatch(Anna anna)
 {
 	if (changec > 0) {
-		anna.handle_channelmodechange(chan, changec, signs, modes, types, params, users);
+		anna.handle_channelmodechange(chan, user, changec, signs, modes,
+		                              types, params, users);
 	}
 }
 

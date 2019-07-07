@@ -194,7 +194,7 @@ void on_topic(User user, char[] channel, char[] topic)
 
 @Override
 public
-void on_channelmodechange(Channel chan, int changec, char[] signs, char[] modes,
+void on_channelmodechange(Channel chan, User user, int changec, char[] signs, char[] modes,
                           char[] types, char[][] params, ChannelUser[] users)
 {
 }

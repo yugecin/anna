@@ -4,6 +4,7 @@ package net.basdon.anna.internal;
 
 import net.basdon.anna.api.Channel;
 import net.basdon.anna.api.ChannelUser;
+import net.basdon.anna.api.User;
 
 import static java.lang.System.arraycopy;
 import static net.basdon.anna.api.Util.*;
@@ -32,10 +33,11 @@ ChannelUserImpl get_or_add_user(char[] nick)
 /**
  * inform that mode has been changed
  * @param anna Anna instance
+ * @param user user that did the mode change or {@code null}
  * @param paramv params from the MODE message (channel should be at index {@code 0}, then mode, ...)
  * @param paramc length of {@code paramv}
  */
-void mode_changed(Anna anna, char[][] paramv, int paramc)
+void mode_changed(Anna anna, User user, char[][] paramv, int paramc)
 {
 	boolean need_user_update = false;
 
@@ -45,7 +47,8 @@ void mode_changed(Anna anna, char[][] paramv, int paramc)
 	char[] change = paramv[1];
 	int paramidx = 2;
 	char sign = '+';
-	Anna.BufferedChanModeChange umc = new Anna.BufferedChanModeChange(this, change.length - 1);
+	Anna.BufferedChanModeChange umc;
+	umc = new Anna.BufferedChanModeChange(this, user, change.length - 1);
 	for (int i = 0; i < change.length; i++) {
 		char c = change[i];
 		if (c == '+' || c == '-') {
