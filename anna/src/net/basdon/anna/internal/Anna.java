@@ -1168,8 +1168,14 @@ void mod_load(char[] modname, char[] replytarget)
 		try {
 			URL[] urls = { np.toUri().toURL() };
 			cl = new URLClassLoader(urls, parent_loader);
-			Class<?> modclass = Class.forName("annamod.Mod", true, cl);
-			IMod mod = (IMod) modclass.newInstance();
+			Object instance = Class.forName("annamod.Mod", true, cl).newInstance();
+			IMod m;
+			try {
+				m = (IMod) instance;
+			} catch (ClassCastException ignored) {
+				m = ((IModLoader) instance).load();
+			}
+			IMod mod = m;
 			if (!modnamestr.equals(mod.getName())) {
 				this.privmsg(
 					replytarget,

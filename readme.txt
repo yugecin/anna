@@ -21,8 +21,9 @@ mods
 ----
 Modules (mods) should be placed as jar files in the same working
 directory, following the name mod_xxx.jar. A mod should have a class
-annamod.Mod that implements net.basdon.anna.api.IMod. For an example,
-check mod_test or any of the other default mods.
+annamod.Mod that implements either net.basdon.anna.api.IMod or
+net.basdon.anna.api.IModLoader. For an example, check mod_test or any
+of the other default mods.
 
 commands
 --------

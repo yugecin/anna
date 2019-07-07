@@ -17,7 +17,17 @@ import static net.basdon.anna.api.Util.*;
 import static net.basdon.anna.api.Constants.*;
 
 public
-class Mod implements IMod
+class Mod implements IModLoader
+{
+@Override
+public
+IMod load()
+{
+	return new ModLog();
+}
+}
+
+class ModLog implements IMod
 {
 private static final Properties defaultconf;
 
@@ -365,7 +375,7 @@ Date time()
 class ChannelLogger
 {
 boolean should_disable;
-Mod mod;
+ModLog mod;
 Long timestamp;
 int lastday;
 char[] chan;
