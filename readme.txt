@@ -67,6 +67,9 @@ confadd <modname>        -- add a configuration setting, analogue
 reloadconf <modname>     -- reload the configuration file of a mod.
                             Use 'anna' as modname for core config.
 mods                     -- print the list of loaded mods
+channels                 -- comma separated list of channels to join
+                            upon connecting. Anna will not part channels
+                            when they are removed from the list.
 
 stats
 -----

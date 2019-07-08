@@ -59,6 +59,7 @@ static
 	default_config.put("bot.user", "Anna");
 	default_config.put("bot.userinfo", "github.com/yugecin/anna");
 	default_config.put("mods.enabled", "");
+	default_config.put("channels", "");
 	default_config.put("messages.restart", "I'll be back");
 	default_config.put("messages.quit",
 	                   "only in Sweden can a dance rap song about IRC hit #1 on the charts");
@@ -196,6 +197,10 @@ void config_loaded()
 		this.debugchan = debugchan.toCharArray();
 	} else {
 		this.debugchan = "#anna".toCharArray();
+	}
+
+	if (this.connection_state) {
+		this.join_channels();
 	}
 }
 
@@ -402,6 +407,7 @@ void connected(Output writer)
 	this.send_raw(buf, 0, buf.length);
 	this.connection_state = true;
 	this.time_connect = System.currentTimeMillis();
+	this.join_channels();
 }
 
 void disconnected()
@@ -409,6 +415,32 @@ void disconnected()
 	this.writer = null;
 	this.connection_state = false;
 	this.disconnects++;
+}
+
+private
+void join_channels()
+{
+	String channels = this.conf.getStr("channels");
+	if (channels == null) {
+		return;
+	}
+	char[] c = channels.toCharArray();
+	int from = 0;
+	char[] raw = new char[100];
+	set(raw, 0, 'J','O','I','N',' ');
+	do
+	{
+		int to = indexOf(c, from + 1, c.length, ',');
+		if (to == -1) {
+			to = c.length;
+		}
+		int len = to - from;
+		if (0 < len && len + 5 < raw.length) {
+			arraycopy(c, from, raw, 5, len);
+			this.send_raw(raw, 0, 5 + len);
+		}
+		from = to + 1;
+	} while (from < c.length);
 }
 
 void dispatch_message(Message msg)
