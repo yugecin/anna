@@ -67,9 +67,6 @@ confadd <modname>        -- add a configuration setting, analogue
 reloadconf <modname>     -- reload the configuration file of a mod.
                             Use 'anna' as modname for core config.
 mods                     -- print the list of loaded mods
-channels                 -- comma separated list of channels to join
-                            upon connecting. Anna will not part channels
-                            when they are removed from the list.
 
 stats
 -----
@@ -97,6 +94,9 @@ owners                         -- comma separated list of users that are owners
                                   (robin_be\!*@cyber.space)
 messages.restart               -- quit message when reconnecting
 messages.part                  -- part message when leaving a channel
+channels                       -- comma separated list of channels to join
+                                  upon connecting. Anna will not part channels
+                                  when they are removed from the list.
 
 ---
 http://qdb.us/296934
