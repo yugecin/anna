@@ -115,7 +115,7 @@ void on_action(User user, char[] target, char[] replytarget, char[] action)
 {
 	out.printf(
 		"mod_test: on_action user: %s target: %s replytarget: %s action: %s%n",
-		user.toString(),
+		user == null ? "null" : user.toString(),
 		new String(target),
 		new String(replytarget),
 		new String(action)
