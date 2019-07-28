@@ -8,6 +8,7 @@ outdirs:
 	mkdir -p mod_figlet/out
 	mkdir -p mod_log/out
 	mkdir -p mod_test/out
+	mkdir -p out
 
 .anna: outdirs $(wildcard anna/src/net/basdon/anna/api/*.java) $(wildcard anna/src/net/basdon/anna/internal/*.java)
 	$(JAVAC) $(JFLAGS) -d anna/out $(filter-out $<,$^)
