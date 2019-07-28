@@ -308,7 +308,7 @@ throws IOException
 				throw ex[0];
 			}
 			if (!res) {
-				out.print("  anna: something broke\n");
+				out.print("\n-anna: something broke\n");
 			}
 			out.print("\n");
 		}
