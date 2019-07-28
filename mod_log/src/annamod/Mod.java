@@ -95,7 +95,7 @@ Properties get_default_conf()
 
 @Override
 public
-boolean on_enable(IAnna anna)
+boolean on_enable(IAnna anna, char[] replytarget)
 {
 	this.anna = anna;
 	anna.load_mod_conf(this);

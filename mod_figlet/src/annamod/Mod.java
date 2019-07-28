@@ -82,7 +82,7 @@ Properties get_default_conf()
 }
 
 @Override
-public boolean on_enable(IAnna anna)
+public boolean on_enable(IAnna anna, char[] replytarget)
 {
 	this.anna = anna;
 

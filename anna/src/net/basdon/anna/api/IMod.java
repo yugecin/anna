@@ -36,9 +36,11 @@ Properties get_default_conf()
 }
 /**
  * Called when this mod is being loaded.
+ * @param replytarget target to send messages to to respond on the loading of this mod, will be the
+ *                    debug channel if this enable was the result of anna boot
  * @return {@code false} if it's not possible to enable this mod
  */
-boolean on_enable(IAnna anna);
+boolean on_enable(IAnna anna, char[] replytarget);
 /**
  * Called when this mod is being unloaded.
  * Remember to unregister every registered listeners, interrupt threads, ...

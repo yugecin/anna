@@ -131,7 +131,7 @@ Anna(ConfigImpl conf)
 	String enabledmods = conf.getStr("mods.enabled");
 	if (enabledmods != null) {
 		for (String m : enabledmods.split(String.valueOf(','))) {
-			this.mod_load(m.toCharArray(), null);
+			this.mod_load(m.toCharArray(), this.debugchan);
 		}
 	}
 }
@@ -1215,8 +1215,8 @@ void mod_load(char[] modname, char[] replytarget)
 				);
 				return;
 			}
-			Supplier<Boolean> func = () -> Boolean.valueOf(mod.on_enable(this));
-			if (!Boolean.TRUE.equals(mod_invoke(mod, "enable", func))) {
+			Supplier<Boolean> f = () -> Boolean.valueOf(mod.on_enable(this, replytarget));
+			if (!Boolean.TRUE.equals(mod_invoke(mod, "enable", f))) {
 				this.privmsg(replytarget, "mod failed to enable".toCharArray());
 				return;
 			}

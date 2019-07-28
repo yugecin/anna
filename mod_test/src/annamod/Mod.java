@@ -43,7 +43,7 @@ throws IOException
 
 @Override
 public
-boolean on_enable(IAnna anna)
+boolean on_enable(IAnna anna, char[] replytarget)
 {
 	out.println("mod_test: enabled");
 	return true;
