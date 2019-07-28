@@ -1181,7 +1181,7 @@ void mod_load(char[] modname, char[] replytarget)
 		this.privmsg(replytarget, (modnamestr + ".jar not found").toCharArray());
 		return;
 	}
-	String rand = String.valueOf(rng.nextInt() & 0xffff);
+	String rand = String.valueOf((rng.nextInt() + 100000) & 0xffffff);
 	Path parent = modfile.toPath().getParent();
 	if (parent == null) {
 		this.privmsg(replytarget, "failed to get parent dir".toCharArray());
@@ -1195,7 +1195,6 @@ void mod_load(char[] modname, char[] replytarget)
 		return;
 	}
 	File nf = np.toFile();
-	nf.deleteOnExit();
 	try {
 		URLClassLoader cl = null;
 		try {
@@ -1228,6 +1227,7 @@ void mod_load(char[] modname, char[] replytarget)
 			Log.info(msg);
 			this.privmsg(replytarget, msg.toCharArray());
 			this.mod_loadcount++;
+			nf.deleteOnExit();
 		} catch (MalformedURLException e) {
 			this.privmsg(replytarget, "failed, check log".toCharArray());
 			throw e;
@@ -1245,9 +1245,13 @@ void mod_load(char[] modname, char[] replytarget)
 			throw t;
 		} finally {
 			close(cl);
+			if (cl != null && !nf.delete()) {
+				nf.deleteOnExit();
+			}
 		}
 	} catch (Throwable t) {
 		Log.error("failed to load mod " + modnamestr, t);
+		nf.delete();
 	}
 }
 
