@@ -828,6 +828,7 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 		this.stats_server = this.stats_server.create_new();
 		this.stats_server.start();
 		this.privmsg(replytarget, "stats server was dead, is restarted".toCharArray());
+		return;
 	}
 
 	if (strcmp(cmd, 'k','i','l','l','s','t','a','t','s') && is_owner(user)) {
@@ -1422,6 +1423,9 @@ char[] get_user_channel_prefixes()
 public
 boolean is_owner(User user)
 {
+	if (user == null) {
+		return false;
+	}
 	for (User o : this.owners) {
 		if (o.matches(user)) {
 			return true;

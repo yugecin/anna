@@ -44,6 +44,7 @@ char[] get_user_channel_modes();
 char[] get_user_channel_prefixes();
 /**
  * check if given user is listed as an Anna owner in the config
+ * @param user may be null
  */
 boolean is_owner(User user);
 /**
