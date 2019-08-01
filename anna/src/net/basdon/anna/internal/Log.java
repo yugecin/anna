@@ -10,23 +10,26 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Date;
 
-public class Log implements AutoCloseable
+class Log implements AutoCloseable
 {
 private static Log log;
 private static final long startTime = System.currentTimeMillis();
 
-public static long runtime()
+static
+long runtime()
 {
 	return System.currentTimeMillis() - startTime;
 }
 
-private static void metalog(String entry)
+private static
+void metalog(String entry)
 {
 	log.fileOut.println(entry);
 	System.out.println(entry);
 }
 
-public static void error(String message, Throwable e)
+static
+void error(String message, Throwable e)
 {
 	synchronized (log) {
 		final String msg = String.format("[%8d] ERROR: %s", runtime(), message);
@@ -36,12 +39,14 @@ public static void error(String message, Throwable e)
 	}
 }
 
-public static void error(Throwable e)
+static
+void error(Throwable e)
 {
 	error("", e);
 }
 
-public static void error(String message)
+static
+void error(String message)
 {
 	synchronized (log) {
 		final String msg = String.format("[%8d] ERROR: %s", runtime(), message);
@@ -50,7 +55,8 @@ public static void error(String message)
 	}
 }
 
-public static void warn(String message)
+static
+void warn(String message)
 {
 	synchronized(log) {
 		final String msg = String.format("[%8d] WARN: %s", runtime(), message);
@@ -59,7 +65,8 @@ public static void warn(String message)
 	}
 }
 
-public static void warn(String message, Throwable e)
+static
+void warn(String message, Throwable e)
 {
 	synchronized (log) {
 		final String msg = String.format("[%8d] WARN: %s", runtime(), message);
@@ -69,7 +76,8 @@ public static void warn(String message, Throwable e)
 	}
 }
 
-public static void info(String message)
+static
+void info(String message)
 {
 	synchronized (log) {
 		final String msg = String.format("[%8d] INFO: %s", runtime(), message);
@@ -78,7 +86,8 @@ public static void info(String message)
 	}
 }
 
-public static void debug(String message)
+static
+void debug(String message)
 {
 	synchronized (log) {
 		final String msg = String.format("[%8d] DEBUG: %s", runtime(), message);
@@ -87,7 +96,8 @@ public static void debug(String message)
 	}
 }
 
-public static Log init()
+static
+Log init()
 {
 	if (log == null) {
 		new Log();
@@ -97,7 +107,8 @@ public static Log init()
 
 private final PrintStream fileOut;
 
-private Log()
+private
+Log()
 {
 	log = this;
 
@@ -130,7 +141,8 @@ public void close()
 	this.fileOut.close();
 }
 
-private void printStackTrace(Throwable t, PrintStream primaryOutput, String prefix)
+private
+void printStackTrace(Throwable t, PrintStream primaryOutput, String prefix)
 {
 	final StringWriter sw = new StringWriter();
 	final PrintWriter pw = new PrintWriter(sw);
