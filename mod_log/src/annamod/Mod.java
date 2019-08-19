@@ -23,6 +23,9 @@ class Mod implements IModLoader
 public
 IMod load()
 {
+	// while pointless in production, using a different class instead of just implementing IMod
+	// gives the advantage that the classname is (hopefully) unique, which makes sure that
+	// debugging is possible (because there might be many annamod.Mod class instances loaded).
 	return new ModLog();
 }
 }
