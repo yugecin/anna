@@ -630,13 +630,14 @@ void handle_join(User user, char[] channel)
 		this.channel_unregister(channel);
 		ChannelImpl chan = new ChannelImpl(channel);
 		this.joined_channels.add(chan);
-		// do not add own user, namelist will handle that
 		return;
-	}
-
-	ChannelImpl chan = this.channel_find(channel);
-	if (chan != null) {
-		chan.userlist.add(new ChannelUserImpl(user.nick));
+	} else {
+		// this is not executed when anna joins,
+		// since a namelist will take care of channel users when anna joins a channel
+		ChannelImpl chan = this.channel_find(channel);
+		if (chan != null) {
+			chan.userlist.add(new ChannelUserImpl(user.nick));
+		}
 	}
 
 	this.mods_invoke("join", m -> m.on_join(user, channel));
@@ -1477,6 +1478,18 @@ void action(char[] target, char[] text)
 	buf[off] = 1;
 	send_raw(buf, 0, buf.length);
 	this.mods_invoke("selfaction", m -> m.on_selfaction(target, text));
+}
+
+@Override
+public
+void join(char[] channel)
+{
+	if (this.find_channel(channel) == null) {
+		char[] buf = new char[5 + channel.length];
+		set(buf, 0, 'J','O','I','N',' ');
+		arraycopy(channel, 0, buf, 5, channel.length);
+		this.send_raw(buf, 0, buf.length);
+	}
 }
 
 @Override

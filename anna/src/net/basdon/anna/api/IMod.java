@@ -196,7 +196,7 @@ void on_quit(User user, char[] msg)
 /**
  * Called when a user joins a channel.
  *
- * @param user user that joined a channel
+ * @param user user that joined a channel, may be anna
  * @param channel the channel they joined
  */
 default

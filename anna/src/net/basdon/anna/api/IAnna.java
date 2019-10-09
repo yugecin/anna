@@ -44,7 +44,7 @@ char[] get_user_channel_modes();
 char[] get_user_channel_prefixes();
 /**
  * check if given user is listed as an Anna owner in the config
- * @param user may be null
+ * @param user may be {@code null}
  */
 boolean is_owner(User user);
 /**
@@ -59,6 +59,11 @@ void privmsg(char[] target, char[] msg, int offset, int len);
  * @param target may be {@code null}, msg will not be sent
  */
 void action(char[] target, char[] msg);
+/**
+ * has no effect when the channel is already joined
+ * @param channel channel to join
+ */
+void join(char[] channel);
 /**
  * don't use for privmsg, use {@link #privmsg} or {@link action} for that
  *
