@@ -663,8 +663,8 @@ void handle_quit(User user, char[] msg)
  */
 void handle_part(User user, char[] channel, char[] msg)
 {
-	this.channel_remove_user(user.nick, channel);
 	this.mods_invoke("part", m -> m.on_part(user, channel, msg));
+	this.channel_remove_user(user.nick, channel);
 }
 
 /**
