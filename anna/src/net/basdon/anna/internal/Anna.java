@@ -652,6 +652,18 @@ void handle_join(User user, char[] channel)
 void handle_quit(User user, char[] msg)
 {
 	this.mods_invoke("quit", m -> m.on_quit(user, msg));
+	if (user != null) {
+		for (Channel chan : this.joined_channels) {
+			int i = chan.userlist.size();
+			while (i-- > 0) {
+				ChannelUser u = chan.userlist.get(i);
+				if (strcmp(user.nick, u.nick)) {
+					chan.userlist.remove(i);
+					break;
+				}
+			}
+		}
+	}
 }
 
 /**
