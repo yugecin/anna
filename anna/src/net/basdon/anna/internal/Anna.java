@@ -677,8 +677,8 @@ void handle_part(User user, char[] channel, char[] msg)
  */
 void handle_kick(User user, char[] channel, char[] kickeduser, char[] msg)
 {
-	this.channel_remove_user(kickeduser, channel);
 	this.mods_invoke("kick", m -> m.on_kick(user, channel, kickeduser, msg));
+	this.channel_remove_user(kickeduser, channel);
 }
 
 /**
