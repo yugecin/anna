@@ -676,6 +676,10 @@ void handle_part(User user, char[] channel, char[] msg)
 {
 	this.mods_invoke("part", m -> m.on_part(user, channel, msg));
 	this.channel_remove_user(user.nick, channel);
+
+	if (strcmp(user.nick, me.nick)) {
+		this.channel_unregister(channel);
+	}
 }
 
 /**
@@ -690,6 +694,10 @@ void handle_kick(User user, char[] channel, char[] kickeduser, char[] msg)
 {
 	this.mods_invoke("kick", m -> m.on_kick(user, channel, kickeduser, msg));
 	this.channel_remove_user(kickeduser, channel);
+
+	if (strcmp(user.nick, me.nick)) {
+		this.channel_unregister(channel);
+	}
 }
 
 /**
