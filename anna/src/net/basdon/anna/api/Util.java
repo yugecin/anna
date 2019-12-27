@@ -245,7 +245,7 @@ boolean has_user_mode_or_higher(ChannelUser user, char[] modes, char wantedmode)
 	}
 	for (int i = 0; i < user.modec; i++) {
 		for (int j = 0; j < applicable_modes; j++) {
-			if (user.modev[i] == modes[i]) {
+			if (user.modev[i] == modes[j]) {
 				return true;
 			}
 		}

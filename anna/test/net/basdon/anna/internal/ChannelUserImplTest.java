@@ -8,10 +8,10 @@ import org.junit.Test;
 
 public class ChannelUserImplTest
 {
-char[] modes = { 'q', 'h', 'o', 'v' };
-char[] prefixes = { '~', '%', '@', '+' };
+public static char[] modes = { 'q', 'h', 'o', 'v' };
+public static char[] prefixes = { '~', '%', '@', '+' };
 
-private
+public static
 ChannelUserImpl usr()
 {
 	ChannelUserImpl.maxmodes = modes.length;
