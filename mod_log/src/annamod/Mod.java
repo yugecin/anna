@@ -9,6 +9,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static java.lang.String.format;
@@ -57,7 +59,7 @@ String getName()
 public
 String getVersion()
 {
-	return "0";
+	return "1";
 }
 
 @Override
@@ -469,12 +471,22 @@ LogWriter get_or_open_stream()
 	boolean wasclosed;
 	if ((wasclosed = this.writer == null) || this.lastday != day) {
 		if (!wasclosed) {
+			Instant instant = mod.time().toInstant().plus(1, ChronoUnit.DAYS);
+			String link = this.filename(Date.from(instant));
+			try {
+				this.writer.write("\n<p><a href=\"");
+				this.writer.write(link);
+				this.writer.write("\">");
+				this.writer.write(link);
+				this.writer.write(" &gt;</a></p>");
+			} catch (IOException e) {
+				mod.anna.log_warn(e, "cannot create log file for " + channel);
+			}
 			close(this.writer);
 			this.writer = null;
 		}
 		this.lastday = day;
-		String filename;
-		filename = format("%s-%tY-%<tm-%<td.html", this.channel, mod.time());
+		String filename = this.filename(mod.time());
 		File of = new File(this.directory, filename);
 		if (of.isDirectory()) {
 			return null;
@@ -484,6 +496,13 @@ LogWriter get_or_open_stream()
 			this.writer = new OutputStreamWriter(new FileOutputStream(of, true), UTF_8);
 			if (!existed) {
 				this.writer.write("<style>html{font-family:monospace}</style>\n");
+				Instant instant = mod.time().toInstant().minus(1, ChronoUnit.DAYS);
+				String link = this.filename(Date.from(instant));
+				this.writer.write("<p><a href=\"");
+				this.writer.write(link);
+				this.writer.write("\">&lt; ");
+				this.writer.write(link);
+				this.writer.write("</a></p>\n");
 			}
 			if (wasclosed) {
 				String msg = format(
@@ -500,6 +519,11 @@ LogWriter get_or_open_stream()
 		return null;
 	}
 	return new LogWriter(this);
+}
+
+String filename(Date date)
+{
+	return format("%s-%tY-%<tm-%<td.html", this.channel, date);
 }
 
 void close_stream()
