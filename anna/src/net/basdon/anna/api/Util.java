@@ -218,4 +218,38 @@ StringBuilder make_modestr(int changec, char[] signs, char[] modes, char[] types
 	sb.append(sb2);
 	return sb;
 }
+
+/**
+ * Check if a channel user has {@code wantedmode} or higher permissions.
+ *
+ * @param user user to check
+ * @param modes all modes, use {@link IAnna#get_user_channel_modes()}. These should be sorted from
+ *              highest permissions to lowest.
+ * @param wantedmode mode to check against (not the prefix)
+ * @return {@code true} if given user has {@code wantedmode} or a higher level
+ */
+public static
+boolean has_user_mode_or_higher(ChannelUser user, char[] modes, char wantedmode)
+{
+	int applicable_modes = 1;
+	boolean mode_exists = false;
+	for (int i = 0; i < modes.length; i++) {
+		if (modes[i] == wantedmode) {
+			mode_exists = true;
+			break;
+		}
+		applicable_modes++;
+	}
+	if (!mode_exists) {
+		return false;
+	}
+	for (int i = 0; i < user.modec; i++) {
+		for (int j = 0; j < applicable_modes; j++) {
+			if (user.modev[i] == modes[i]) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
 }
