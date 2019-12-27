@@ -630,7 +630,6 @@ void handle_join(User user, char[] channel)
 		this.channel_unregister(channel);
 		ChannelImpl chan = new ChannelImpl(channel);
 		this.joined_channels.add(chan);
-		return;
 	} else {
 		// this is not executed when anna joins,
 		// since a namelist will take care of channel users when anna joins a channel
