@@ -472,11 +472,10 @@ LogWriter get_or_open_stream()
 	boolean wasclosed;
 	if ((wasclosed = this.writer == null) || this.lastday != day) {
 		if (!wasclosed) {
-			Instant instant = mod.time().toInstant().plus(1, ChronoUnit.DAYS);
-			String link = this.filename(Date.from(instant));
+			String link = this.filename(mod.time()); // no need to do +1 since it's now
 			try {
 				this.writer.write("\n<p><a href=\"");
-				this.writer.write(link);
+				this.writer.write(link.replace("#", "%23"));
 				this.writer.write("\">");
 				this.writer.write(link);
 				this.writer.write(" &gt;</a></p>");
@@ -500,7 +499,7 @@ LogWriter get_or_open_stream()
 				Instant instant = mod.time().toInstant().minus(1, ChronoUnit.DAYS);
 				String link = this.filename(Date.from(instant));
 				this.writer.write("<p><a href=\"");
-				this.writer.write(link);
+				this.writer.write(link.replace("#", "%23"));
 				this.writer.write("\">&lt; ");
 				this.writer.write(link);
 				this.writer.write("</a></p>\n");
