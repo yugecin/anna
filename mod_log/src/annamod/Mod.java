@@ -59,7 +59,7 @@ String getName()
 public
 String getVersion()
 {
-	return "1";
+	return "2";
 }
 
 @Override
@@ -149,6 +149,7 @@ void config_loaded(Config conf)
 					cl.chan = chan;
 					cl.directory = dir;
 					this.loggers.put(channel, cl);
+					cl.get_or_open_stream(); // write 'session open' msg
 				} else {
 					cl.should_disable = false;
 				}
