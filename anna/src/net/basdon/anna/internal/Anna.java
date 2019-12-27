@@ -110,6 +110,7 @@ Anna(ConfigImpl conf)
 	this.modconfigs = new HashMap<>();
 	this.joined_channels = new ArrayList<>();
 	this.chanmode_updates = new LinkedList<>();
+	this.buffer_raw = true;
 
 	me = new User();
 	me.nick = conf.getStr("bot.nick").toCharArray();
@@ -408,10 +409,17 @@ void connected(Output writer)
 	this.connection_state = true;
 	this.time_connect = System.currentTimeMillis();
 	this.join_channels();
+	this.buffer_raw = false;
+	for (char[] line : this.raw_buffer) {
+		this.send_raw(line, 0, line.length);
+	}
+	this.raw_buffer.clear();
 }
 
 void disconnected()
 {
+	this.raw_buffer.clear();
+	this.buffer_raw = true;
 	this.writer = null;
 	this.connection_state = false;
 	this.disconnects++;
