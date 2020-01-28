@@ -31,6 +31,7 @@ Default command prefix is &
 
 Most of these need owner privileges (see config file).
 
+amiowner                 -- tells you if you have owner permissions
 raw <string>             -- send a raw message
 say <target> <string>    -- send a message to a user or channel
 action <target> <string> -- send an action message to a user or channel
@@ -92,6 +93,10 @@ debug.print.incoming           -- print incoming messages to console (false)
 debug.print.outgoing           -- print outgoing messages to console (false)
 owners                         -- comma separated list of users that are owners
                                   (robin_be\!*@cyber.space)
+ownerpw                        -- password to become owner, send a privmsg to
+                                  bot with 'identify password'. Permissions will
+                                  be gone again when you and Anna don't share
+                                  channels anymore. Omit to disable.
 messages.restart               -- quit message when reconnecting
 messages.part                  -- part message when leaving a channel
 channels                       -- comma separated list of channels to join

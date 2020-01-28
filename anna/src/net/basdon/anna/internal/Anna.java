@@ -86,6 +86,7 @@ private User me;
 private char[] debugchan;
 private char[] newnick;
 private boolean buffer_raw;
+private char[] temp_owner_user;
 
 /**
  * {@link https://tools.ietf.org/html/draft-brocklesby-irc-isupport-03#section-3.14}
@@ -670,6 +671,9 @@ void handle_quit(User user, char[] msg)
 				}
 			}
 		}
+		if (strcmp(user.nick, this.temp_owner_user) && this.find_user(user.nick) == null) {
+			this.temp_owner_user = null;
+		}
 	}
 }
 
@@ -687,6 +691,9 @@ void handle_part(User user, char[] channel, char[] msg)
 
 	if (strcmp(user.nick, me.nick)) {
 		this.channel_unregister(channel);
+	}
+	if (strcmp(user.nick, this.temp_owner_user) && this.find_user(user.nick) == null) {
+		this.temp_owner_user = null;
 	}
 }
 
@@ -706,6 +713,9 @@ void handle_kick(User user, char[] channel, char[] kickeduser, char[] msg)
 	if (strcmp(user.nick, me.nick)) {
 		this.channel_unregister(channel);
 	}
+	if (strcmp(user.nick, this.temp_owner_user) && this.find_user(user.nick) == null) {
+		this.temp_owner_user = null;
+	}
 }
 
 /**
@@ -719,6 +729,9 @@ void handle_nick(User user, char[] newnick)
 	char[] oldnick = user.nick;
 	if (strcmp(me.nick, user.nick)) {
 		me.nick = newnick;
+	}
+	if (strcmp(user.nick, this.temp_owner_user)) {
+		this.temp_owner_user = newnick;
 	}
 	int i = this.joined_channels.size();
 	while (i-- > 0) {
@@ -805,6 +818,14 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
 
 	if (strcmp(cmd, 'd','i','e') && is_owner(user)) {
 		throw new QuitException();
+	}
+
+	if (strcmp(cmd, 'a','m','i','o','w','n','e','r')) {
+		if (is_owner(user)) {
+			this.privmsg(replytarget, new char[] { 'y', 'a' });
+		} else {
+			this.privmsg(replytarget, new char[] { 'n', 'o' });
+		}
 	}
 
 	if (strcmp(cmd, 'r','e','s','t','a','r','t') && is_owner(user)) {
@@ -1113,6 +1134,18 @@ void handle_command(User user, char[] target, char[] replytarget, char[] message
  */
 void handle_message(User user, char[] target, char[] replytarget, char[] message)
 {
+	if (user != null &&
+		target[0] != '#' &&
+		message.length > 10 &&
+		strcmp(message, 0, 8, 'i','d','e','n','t','i','f','y'))
+	{
+		String pw = new String(message, 9, message.length - 9);
+		if (pw.equals(this.conf.getStr("ownerpw"))) {
+			if (this.find_user(user.nick) != null) {
+				this.temp_owner_user = user.nick;
+			}
+		}
+	}
 	this.mods_invoke("message", m -> m.on_message(user, target, replytarget, message));
 }
 
@@ -1433,6 +1466,23 @@ ChannelUser find_user(char[] channel, char[] nick)
 	return null;
 }
 
+private
+ChannelUser find_user(char[] nick)
+{
+	int i = this.joined_channels.size();
+	while (i-- > 0) {
+		Channel chan = this.joined_channels.get(i);
+		int j = chan.userlist.size();
+		while (j-- > 0) {
+			ChannelUser usr = chan.userlist.get(j);
+			if (strcmp(nick, usr.nick)) {
+				return usr;
+			}
+		}
+	}
+	return null;
+}
+
 @Override
 public
 char[] get_user_channel_modes()
@@ -1453,6 +1503,9 @@ boolean is_owner(User user)
 {
 	if (user == null) {
 		return false;
+	}
+	if (strcmp(this.temp_owner_user, user.nick)) {
+		return true;
 	}
 	for (User o : this.owners) {
 		if (o.matches(user)) {
