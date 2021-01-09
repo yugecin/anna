@@ -1,4 +1,4 @@
-// Copyright 2019 yugecin - this source is licensed under GPL
+// Copyright 2019-2021 yugecin - this source is licensed under GPL
 // see the LICENSE file for more details
 package net.basdon.anna.internal;
 
@@ -16,8 +16,9 @@ import static net.basdon.anna.api.Util.*;
 public class Main
 {
 private static boolean restart, shutdown;
-private static Socket socket;
+private static Closeable socket;
 
+static Socket debugSocket;
 static boolean debug_print_in, debug_print_out;
 
 static int recv, sent;
@@ -67,11 +68,11 @@ int main()
 	Anna anna = new Anna(conf);
 	Runtime.getRuntime().addShutdownHook(new Thread(Main::shutdownhook));
 
-	boolean disconnect_after_succesful_connection = true;
 	for (;;) {
+		boolean had_successfull_connection = false;
 		anna.connecting();
-		try (Socket socket = new Socket(host, port)) {
-			disconnect_after_succesful_connection = true;
+		try (Socket socket = createSocket(host, port)) {
+			had_successfull_connection = true;
 			CapturedWriter out;
 			InputStreamReader in;
 
@@ -107,8 +108,8 @@ int main()
 
 		int retry_timeout = conf.getInt("connection.retrytimeoutseconds", 1, 3600);
 
-		if (disconnect_after_succesful_connection) {
-			disconnect_after_succesful_connection = false;
+		if (had_successfull_connection) {
+			had_successfull_connection = false;
 			Log.warn("disconnected, reconnecting every " + retry_timeout + "s");
 		}
 
@@ -120,6 +121,15 @@ int main()
 
 	anna.shutdown();
 	return 0;
+}
+
+private static
+Socket createSocket(String host, int port) throws UnknownHostException, IOException
+{
+	if (Main.debugSocket != null) {
+		return Main.debugSocket;
+	}
+	return new Socket(host, port);
 }
 
 private static
@@ -228,7 +238,9 @@ throws IOException
 private static
 void shutdownhook()
 {
-	close(Main.socket);
+	if (Main.socket != null) {
+		close(Main.socket);
+	}
 }
 } /*Main*/
 

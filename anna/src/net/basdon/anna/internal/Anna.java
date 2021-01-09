@@ -1,4 +1,4 @@
-// Copyright 2019 yugecin - this source is licensed under GPL
+// Copyright 2019-2021 yugecin - this source is licensed under GPL
 // see the LICENSE file for more details
 package net.basdon.anna.internal;
 
@@ -131,7 +131,7 @@ Anna(ConfigImpl conf)
 	}
 
 	String enabledmods = conf.getStr("mods.enabled");
-	if (enabledmods != null) {
+	if (enabledmods != null && !enabledmods.isEmpty()) {
 		for (String m : enabledmods.split(String.valueOf(','))) {
 			this.mod_load(m.toCharArray(), this.debugchan);
 		}

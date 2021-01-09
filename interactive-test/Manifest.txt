@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Main-Class: net.basdon.anna.internal.InteractiveTest
+Class-Path: anna.jar
