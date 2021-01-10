@@ -572,7 +572,7 @@ void dispatch_message0(Message msg)
 		char[] users = msg.paramv[msg.paramc - 1];
 		int[] spaces = new int[users.length / 2 + 2];
 		int spacecount = occurrences(users, 0, users.length, ' ', spaces, spaces.length);
-		if (spaces[spacecount - 1] != users.length - 1) {
+		if (spacecount == 0 || spaces[spacecount - 1] != users.length - 1) {
 			spaces[spacecount++] = users.length;
 		}
 		int off = 0;
