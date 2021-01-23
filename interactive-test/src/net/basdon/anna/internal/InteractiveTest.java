@@ -243,7 +243,11 @@ void handleAnnaLine(String line)
 		this.annaUser = annaNickname + '!' + this.annaName + '@' + SERVERNAME;
 		this.sendMessage(null, RPL_ENDOFMOTD, ":end of motd");
 	} else if (strcmp(message.cmd, 'J','O','I','N')) {
-		this.sendMessage(this.annaUser, "JOIN", ":" + new String(message.paramv[0]));
+		String channel = new String(message.paramv[0]);
+		this.sendMessage(this.annaUser, "JOIN", ":" + channel);
+		String names = ":" + this.annaNickname + " fakeUser1 @fakeUser2";
+		this.sendMessage(null, RPL_NAMREPLY, this.annaNickname, "=", channel, names);
+		this.sendMessage(null, RPL_ENDOFNAMES, this.annaNickname, "=", channel, ":End of /NAMES list.");
 	}
 }
 

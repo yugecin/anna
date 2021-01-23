@@ -153,6 +153,7 @@ void on_channelmodechange(Channel chan, User user, int changec, char[] signs, ch
 }
 /**
  * Called when a user changes their nick.
+ * This is called after the user was edited in channel user list data.
  *
  * @param user user that changed their nick (this should have the new name)
  * @param oldnick the old nickname of this user
@@ -164,6 +165,7 @@ void on_nickchange(User user, char[] oldnick, char[] newnick)
 }
 /**
  * Called when a user gets kicked from a channel.
+ * This is called before the user is removed from any channel lists.
  *
  * @param user user that did the kick action, may be {@code null}
  * @param channel channel where the kick happened
@@ -176,6 +178,7 @@ void on_kick(User user, char[] channel, char[] kickeduser, char[] msg)
 }
 /**
  * Called when a user parts a channel.
+ * This is called before the user is removed from any channel lists.
  *
  * @param user user that part the channel
  * @param channel channel that the user left
@@ -187,6 +190,7 @@ void on_part(User user, char[] channel, char[] msg)
 }
 /**
  * Called when a user quits.
+ * This is called before the user is removed from any channel lists.
  *
  * @param user user that quit
  * @param msg quit message, may be {@code null}
@@ -197,12 +201,27 @@ void on_quit(User user, char[] msg)
 }
 /**
  * Called when a user joins a channel.
+ * Note that when it is anna joining, there will be no data yet about the users in
+ * the channel when this is being called. {@link #on_selfjoin} can be used instead
+ * if the userlist is required.
  *
  * @param user user that joined a channel, may be anna
  * @param channel the channel they joined
  */
 default
 void on_join(User user, char[] channel)
+{
+}
+/**
+ * Called when anna has joined a channel and the ENDOFNAMES message has been received,
+ * meaning all of the users in the channel are now known to anna. {@link #on_join} will
+ * also be called when anna joins a channel, but at that point anna will not have a
+ * userlist yet.
+ *
+ * @param channel the joined channel
+ */
+default
+void on_selfjoin(Channel channel)
 {
 }
 }

@@ -11,6 +11,8 @@ import static net.basdon.anna.api.Util.*;
 
 class ChannelImpl extends Channel
 {
+boolean have_initial_name_list;
+
 ChannelImpl(char[] name)
 {
 	super(name);

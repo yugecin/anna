@@ -10,7 +10,8 @@ import java.io.IOException;
 import static java.lang.System.out;
 import static net.basdon.anna.api.Util.*;
 
-public class Mod implements IMod
+public
+class Mod implements IMod
 {
 @Override
 public
@@ -158,7 +159,8 @@ void on_channelmodechange(Channel chan, User user, int changec, char[] signs, ch
 }
 
 @Override
-public void on_nickchange(User user, char[] oldnick, char[] newnick)
+public
+void on_nickchange(User user, char[] oldnick, char[] newnick)
 {
 	out.printf(
 		"mod_test: on_nickchange user: %s oldnick: %s newnick: %s%n",
@@ -169,7 +171,8 @@ public void on_nickchange(User user, char[] oldnick, char[] newnick)
 }
 
 @Override
-public void on_kick(User user, char[] channel, char[] kickeduser, char[] msg)
+public
+void on_kick(User user, char[] channel, char[] kickeduser, char[] msg)
 {
 	out.printf(
 		"mod_test: on_kick user: %s channel: %s kickeduser: %s msg: %s%n",
@@ -181,7 +184,8 @@ public void on_kick(User user, char[] channel, char[] kickeduser, char[] msg)
 }
 
 @Override
-public void on_part(User user, char[] channel, char[] msg)
+public
+void on_part(User user, char[] channel, char[] msg)
 {
 	out.printf(
 		"mod_test: on_part user: %s channel: %s msg: %s%n",
@@ -192,7 +196,8 @@ public void on_part(User user, char[] channel, char[] msg)
 }
 
 @Override
-public void on_quit(User user, char[] msg)
+public
+void on_quit(User user, char[] msg)
 {
 	out.printf(
 		"mod_test: on_quit user: %s msg: %s%n",
@@ -202,12 +207,23 @@ public void on_quit(User user, char[] msg)
 }
 
 @Override
-public void on_join(User user, char[] channel)
+public
+void on_join(User user, char[] channel)
 {
 	out.printf(
 		"mod_test: on_join user: %s channel: %s%n",
 		user.toString(),
 		new String(channel)
+	);
+}
+
+@Override
+public
+void on_selfjoin(Channel channel)
+{
+	out.printf(
+		"mod_test: on_selfjoin channel: %s%n",
+		new String(channel.name)
 	);
 }
 }

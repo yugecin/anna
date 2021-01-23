@@ -237,6 +237,15 @@ void ensure_stats_server(int port)
 	this.stats_server.start();
 }
 
+
+
+@Override
+public
+Config get_anna_conf()
+{
+	return this.conf;
+}
+
 @Override
 public
 boolean load_mod_conf(IMod requester)
@@ -611,6 +620,11 @@ void dispatch_message0(Message msg)
 					iter.remove();
 				}
 			}
+		}
+		ChannelImpl channel = (ChannelImpl) this.find_channel(chan);
+		if (channel != null && !channel.have_initial_name_list) {
+			channel.have_initial_name_list = true;
+			this.mods_invoke("on_selfjoin", m -> m.on_selfjoin(channel));
 		}
 		return;
 	}

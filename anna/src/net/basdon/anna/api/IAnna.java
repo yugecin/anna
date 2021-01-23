@@ -8,6 +8,10 @@ import java.util.ArrayList;
 public interface IAnna
 {
 /**
+ * @return the loaded anna conf
+ */
+Config get_anna_conf();
+/**
  * Load the config file associated with this mod.
  * Config file will be loaded from {@code conf/<modname>.properties}
  * If the config was loaded successfully, {@link IMod#config_loaded} will be called.
