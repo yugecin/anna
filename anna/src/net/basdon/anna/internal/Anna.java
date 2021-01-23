@@ -1544,20 +1544,27 @@ void privmsg(char[] target, char[] text, int offset, int len)
 public
 void action(char[] target, char[] text)
 {
+	this.action(target, text, 0, text.length);
+}
+
+@Override
+public
+void action(char[] target, char[] text, int offset, int len)
+{
 	if (target == null) {
 		return;
 	}
-	char[] buf = new char[8 + target.length + 10 + text.length + 1];
+	char[] buf = new char[8 + target.length + 10 + len + 1];
 	int off = 0;
 	off = set(buf, off, "PRIVMSG ".toCharArray());
 	arraycopy(target, 0, buf, off, target.length);
 	off += target.length;
 	off = set(buf, off, ' ',':',(char) 1,'A','C','T','I','O','N',' ');
-	arraycopy(text, 0, buf, off, text.length);
-	off += text.length;
+	arraycopy(text, offset, buf, off, len);
+	off += len;
 	buf[off] = 1;
 	send_raw(buf, 0, buf.length);
-	this.mods_invoke("selfaction", m -> m.on_selfaction(target, text));
+	this.mods_invoke("selfaction", m -> m.on_selfaction(target, text, 0, len));
 }
 
 @Override

@@ -1,4 +1,4 @@
-// Copyright 2019 yugecin - this source is licensed under GPL
+// Copyright 2019-2021 yugecin - this source is licensed under GPL
 // see the LICENSE file for more details
 package net.basdon.anna.api;
 
@@ -114,9 +114,11 @@ void on_selfmessage(char target[], char text[], int offset, int len)
  *
  * @param target where the message was sent
  * @param text buffer containing the message that was sent
+ * @param offset offset in the buffer where the message starts
+ * @param len length of the message
  */
 default
-void on_selfaction(char target[], char text[])
+void on_selfaction(char target[], char text[], int offset, int len)
 {
 }
 /**

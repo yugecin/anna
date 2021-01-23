@@ -1,4 +1,4 @@
-// Copyright 2019 yugecin - this source is licensed under GPL
+// Copyright 2019-2021 yugecin - this source is licensed under GPL
 // see the LICENSE file for more details
 package annamod;
 
@@ -82,12 +82,12 @@ void on_selfmessage(char[] target, char[] text, int offset, int len)
 
 @Override
 public
-void on_selfaction(char[] target, char[] text)
+void on_selfaction(char[] target, char[] text, int offset, int len)
 {
 	out.printf(
 		"mod_test: on_selfaction target: %s text: %s%n",
 		new String(target),
-		new String(text)
+		new String(text, offset, len)
 	);
 }
 

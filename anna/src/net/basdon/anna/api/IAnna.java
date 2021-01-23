@@ -1,4 +1,4 @@
-// Copyright 2019 yugecin - this source is licensed under GPL
+// Copyright 2019-2021 yugecin - this source is licensed under GPL
 // see the LICENSE file for more details
 package net.basdon.anna.api;
 
@@ -59,6 +59,10 @@ void privmsg(char[] target, char[] msg, int offset, int len);
  * @param target may be {@code null}, msg will not be sent
  */
 void action(char[] target, char[] msg);
+/**
+ * @param target may be {@code null}, msg will not be sent
+ */
+void action(char[] target, char[] msg, int offset, int len);
 /**
  * has no effect when the channel is already joined
  * @param channel channel to join
