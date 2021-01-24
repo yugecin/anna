@@ -51,6 +51,9 @@ private DefaultListModel<RichMessage> listModel;
 private JTextField txtPrivmsgSender;
 private JTextField txtPrivmsgTarget;
 private JTextField txtPrivmsgValue;
+private JTextField txtActionSender;
+private JTextField txtActionTarget;
+private JTextField txtActionValue;
 private JTextField txtRaw;
 
 public static
@@ -85,7 +88,9 @@ InteractiveTest()
 
 	Container root;
 	JList<RichMessage> list;
-	JTextField txtPrivmsgSender, txtPrivmsgTarget, txtPrivmsgValue, txtRaw;
+	JTextField txtPrivmsgSender, txtPrivmsgTarget, txtPrivmsgValue;
+	JTextField txtActionSender, txtActionTarget, txtActionValue;
+	JTextField txtRaw;
 	SpringLayout layout;
 	JScrollPane scrollPane;
 
@@ -111,6 +116,18 @@ InteractiveTest()
 	txtPrivmsgValue.addActionListener(this);
 	txtPrivmsgValue.setFont(GLOBALFONT);
 
+	txtActionSender = this.txtActionSender = new JTextField("robin_be!robin@cyber.space");
+	txtActionSender.addActionListener(this);
+	txtActionSender.setFont(GLOBALFONT);
+
+	txtActionTarget = this.txtActionTarget = new JTextField("#basdon.echo");
+	txtActionTarget.addActionListener(this);
+	txtActionTarget.setFont(GLOBALFONT);
+
+	txtActionValue = this.txtActionValue = new JTextField("text");
+	txtActionValue.addActionListener(this);
+	txtActionValue.setFont(GLOBALFONT);
+
 	txtRaw = this.txtRaw = new JTextField("RAW");
 	txtRaw.addActionListener(this);
 	txtRaw.setFont(GLOBALFONT);
@@ -119,12 +136,18 @@ InteractiveTest()
 	root.add(txtPrivmsgSender);
 	root.add(txtPrivmsgTarget);
 	root.add(txtPrivmsgValue);
+	root.add(txtActionSender);
+	root.add(txtActionTarget);
+	root.add(txtActionValue);
 	root.add(txtRaw);
 
 	this.setDimensions(scrollPane, 300, 300, -2, -2, Short.MAX_VALUE, Short.MAX_VALUE);
 	this.setDimensions(txtPrivmsgSender, 200, -2, -2, -1, 300, -1);
 	this.setDimensions(txtPrivmsgTarget, 200, -2, -2, -1, Short.MAX_VALUE, -1);
 	this.setDimensions(txtPrivmsgValue, 200, -2, -2, -1, Short.MAX_VALUE, -1);
+	this.setDimensions(txtActionSender, 200, -2, -2, -1, 300, -1);
+	this.setDimensions(txtActionTarget, 200, -2, -2, -1, Short.MAX_VALUE, -1);
+	this.setDimensions(txtActionValue, 200, -2, -2, -1, Short.MAX_VALUE, -1);
 	this.setDimensions(txtRaw, -2, -2, -2, -1, Short.MAX_VALUE, -1);
 
 	layout.putConstraint(NORTH, scrollPane, 12, NORTH, root);
@@ -139,7 +162,16 @@ InteractiveTest()
 	layout.putConstraint(NORTH, txtPrivmsgValue, 0, NORTH, txtPrivmsgSender);
 	layout.putConstraint(SOUTH, txtPrivmsgTarget, 0, SOUTH, txtPrivmsgSender);
 	layout.putConstraint(SOUTH, txtPrivmsgValue, 0, SOUTH, txtPrivmsgSender);
-	layout.putConstraint(SOUTH, txtPrivmsgSender, -12, NORTH, txtRaw);
+	layout.putConstraint(SOUTH, txtPrivmsgSender, -12, NORTH, txtActionSender);
+	layout.putConstraint(WEST, txtActionSender, 0, WEST, scrollPane);
+	layout.putConstraint(WEST, txtActionTarget, 12, EAST, txtActionSender);
+	layout.putConstraint(WEST, txtActionValue, 12, EAST, txtActionTarget);
+	layout.putConstraint(EAST, txtActionValue, 0, EAST, scrollPane);
+	layout.putConstraint(NORTH, txtActionTarget, 0, NORTH, txtActionSender);
+	layout.putConstraint(NORTH, txtActionValue, 0, NORTH, txtActionSender);
+	layout.putConstraint(SOUTH, txtActionTarget, 0, SOUTH, txtActionSender);
+	layout.putConstraint(SOUTH, txtActionValue, 0, SOUTH, txtActionSender);
+	layout.putConstraint(SOUTH, txtActionSender, -12, NORTH, txtRaw);
 	layout.putConstraint(WEST, txtRaw, 0, WEST, txtPrivmsgSender);
 	layout.putConstraint(EAST, txtRaw, 0, EAST, txtPrivmsgValue);
 	layout.putConstraint(SOUTH, txtRaw, -12, SOUTH, root);
@@ -159,6 +191,15 @@ void actionPerformed(ActionEvent e)
 		String value = this.txtPrivmsgValue.getText();
 		this.sendMessage(sender, "PRIVMSG", target, ':' + value);
 		this.txtPrivmsgValue.setText("");
+	} else if (source == this.txtActionSender ||
+		source == this.txtActionTarget ||
+		source == this.txtActionValue)
+	{
+		String sender = this.txtActionSender.getText();
+		String target = this.txtActionTarget.getText();
+		String value = this.txtActionValue.getText();
+		this.sendMessage(sender, "PRIVMSG", target, ":\1ACTION " + value + "\1");
+		this.txtActionValue.setText("");
 	} else if (source == this.txtRaw) {
 		this.send(this.txtRaw.getText());
 		this.txtRaw.setText("");
