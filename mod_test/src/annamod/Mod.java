@@ -94,6 +94,17 @@ void on_selfaction(char[] target, char[] text, int offset, int len)
 
 @Override
 public
+void on_selfnotice(char[] target, char[] text, int offset, int len)
+{
+	out.printf(
+		"mod_test: on_selfnotice target: %s text: %s%n",
+		new String(target),
+		new String(text, offset, len)
+	);
+}
+
+@Override
+public
 boolean on_command(User user, char[] target, char[] replytarget,
                    char[] message, char[] cmd, char[] params)
 {

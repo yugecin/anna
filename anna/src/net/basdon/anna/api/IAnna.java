@@ -68,6 +68,14 @@ void action(char[] target, char[] msg);
  */
 void action(char[] target, char[] msg, int offset, int len);
 /**
+ * @param target may be {@code null}, msg will not be sent
+ */
+void notice(char[] target, char[] msg);
+/**
+ * @param target may be {@code null}, msg will not be sent
+ */
+void notice(char[] target, char[] msg, int offset, int len);
+/**
  * has no effect when the channel is already joined
  * @param channel channel to join
  */

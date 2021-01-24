@@ -1578,7 +1578,31 @@ void action(char[] target, char[] text, int offset, int len)
 	off += len;
 	buf[off] = 1;
 	send_raw(buf, 0, buf.length);
-	this.mods_invoke("selfaction", m -> m.on_selfaction(target, text, 0, len));
+	this.mods_invoke("selfaction", m -> m.on_selfaction(target, text, offset, len));
+}
+
+@Override
+public
+void notice(char[] target, char[] text)
+{
+	this.notice(target, text, 0, text.length);
+}
+
+@Override
+public
+void notice(char[] target, char[] text, int offset, int len)
+{
+	if (target == null) {
+		return;
+	}
+	char[] buf = new char[7 + target.length + 2 + len];
+	set(buf, 0, 'N','O','T','I','C','E',' ');
+	arraycopy(target, 0, buf, 7, target.length);
+	buf[7 + target.length] = ' ';
+	buf[7 + target.length + 1] = ':';
+	arraycopy(text, offset, buf, 7 + target.length + 2, len);
+	send_raw(buf, 0, buf.length);
+	this.mods_invoke("selfnotice", m -> m.on_selfnotice(target, text, offset, len));
 }
 
 @Override

@@ -122,6 +122,18 @@ void on_selfaction(char target[], char text[], int offset, int len)
 {
 }
 /**
+ * Called when anna sends a notice. May be channel or private.
+ *
+ * @param target where the message was sent
+ * @param text buffer containing the message that was sent
+ * @param offset offset in the buffer where the message starts
+ * @param len length of the message
+ */
+default
+void on_selfnotice(char target[], char text[], int offset, int len)
+{
+}
+/**
  * Called when a topic has been changed.
  *
  * @param user user that changed the topic, may be {@code null}
