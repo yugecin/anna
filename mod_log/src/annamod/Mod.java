@@ -402,7 +402,7 @@ void log_action_message(char[] target, char[] nick, char[] action, int off, int 
 				lw.append_escape(nick, 0, nick.length);
 				lw.writer.write(' ');
 			}
-			lw.append_parse_ctrlcodes(action, 0, action.length);
+			lw.append_parse_ctrlcodes(action, 0, len);
 			lw.lf();
 		} catch (IOException ignored) {}
 	}
