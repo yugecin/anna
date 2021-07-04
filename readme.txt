@@ -83,6 +83,11 @@ bot.user                       -- username of the bot (Anna^)
 bot.userinfo                   -- user info of the bot
 server.host                    -- server to connect to
 server.port                    -- port to connect to
+server.ssl.protocol            -- SSL/TLS protocol to use. Omit to use an
+                                  unencrypted connection. Provide a garbage
+                                  value to list the available protocols.
+server.ssl.trustall            -- Do not validate certificates when using a
+                                  secure connection
 connection.retrytimeoutseconds -- amount of seconds to wait before reconnecting
                                   when connection drops (2)
 stats.enable                   -- if stats should be enabled (true)

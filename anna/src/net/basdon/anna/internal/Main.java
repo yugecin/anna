@@ -5,6 +5,21 @@ package net.basdon.anna.internal;
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Provider.Service;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.cert.X509Certificate;
+import java.util.StringJoiner;
+import java.util.TreeSet;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import net.basdon.anna.api.Message;
 
@@ -64,6 +79,22 @@ int main()
 		Log.warn("update 'server.host' and 'server.port' in the config");
 		return 4;
 	}
+	SSLContext sslContext = null;
+	boolean sslTrustall = conf.getBool("server.ssl.trustall");
+	String sslProtocol = conf.getStr("server.ssl.protocol");
+	if (sslProtocol != null) {
+		try {
+			sslContext = initializeSSLContext(sslProtocol, sslTrustall);
+			Log.debug("using SSL protocol " + sslProtocol);
+		} catch (NoSuchAlgorithmException ignored) {
+			Log.error("cannot load SSL context for protocol: " + sslProtocol);
+			printAvailableSecureSocketAlgorithms();
+			return 6;
+		} catch (KeyManagementException e) {
+			Log.error("cannot initialize SSL context", e);
+			return 7;
+		}
+	}
 
 	Anna anna = new Anna(conf);
 	Runtime.getRuntime().addShutdownHook(new Thread(Main::shutdownhook));
@@ -71,7 +102,7 @@ int main()
 	for (;;) {
 		boolean had_successfull_connection = false;
 		anna.connecting();
-		try (Socket socket = createSocket(host, port)) {
+		try (Socket socket = createSocket(host, port, sslContext)) {
 			had_successfull_connection = true;
 			CapturedWriter out;
 			InputStreamReader in;
@@ -92,6 +123,9 @@ int main()
 			return 5;
 		} catch (Exception e) {
 			Log.error("socket exception", e);
+			if (e instanceof SSLHandshakeException && !sslTrustall) {
+				Log.info("try setting 'server.ssl.trustall' to 'true'");
+			}
 		}
 		Main.socket = null;
 		anna.disconnected();
@@ -124,12 +158,64 @@ int main()
 }
 
 private static
-Socket createSocket(String host, int port) throws UnknownHostException, IOException
+Socket createSocket(String host, int port, SSLContext sslContext)
+throws UnknownHostException, IOException
 {
 	if (Main.debugSocket != null) {
 		return Main.debugSocket;
 	}
+	if (sslContext != null) {
+		return sslContext.getSocketFactory().createSocket(host, port);
+	}
 	return new Socket(host, port);
+}
+
+private static
+void printAvailableSecureSocketAlgorithms()
+{
+	TreeSet<String> algorithms = new TreeSet<>(String::compareTo);
+	for (Provider p : Security.getProviders()) {
+		for (Service service : p.getServices()) {
+			if ("SSLContext".equals(service.getType())) {
+				algorithms.add(service.getAlgorithm());
+			}
+		}
+	}
+	StringJoiner joiner = new StringJoiner(", ");
+	for (String algo : algorithms) {
+		joiner.add(algo);
+	}
+	Log.info("Available SSLContext algorithms: " + joiner.toString());
+}
+
+private static
+SSLContext initializeSSLContext(String protocol, boolean trustall)
+throws KeyManagementException, NoSuchAlgorithmException
+{
+	SSLContext sslContext = SSLContext.getInstance(protocol);
+	TrustManager[] trustManagers = null;
+	if (trustall) {
+		Log.info("trusting all certificates for SSL context");
+		TrustManager tm = new X509TrustManager()
+		{
+			@Override
+			public void checkClientTrusted(X509Certificate[] chain, String authType)
+			{
+			}
+			@Override
+			public void checkServerTrusted(X509Certificate[] chain, String authType)
+			{
+			}
+			@Override
+			public X509Certificate[] getAcceptedIssuers()
+			{
+				return new X509Certificate[0];
+			}
+		};
+		trustManagers = new TrustManager[] { tm };
+	}
+	sslContext.init((KeyManager[]) null, trustManagers,  new SecureRandom());
+	return sslContext;
 }
 
 private static
