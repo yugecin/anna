@@ -104,7 +104,7 @@ channels                       -- comma separated list of channels to join
                                   when they are removed from the list.
 
 ---
-http://qdb.us/296934
+https://web.archive.org/web/20150112230732/http://qdb.us/296934
 <Indogutsu> Is that that Basshunter song?
 <Slime_Master> Yeah
 <Indogutsu> ...only in Sweden can a dance rap song about IRC hit #1 on
