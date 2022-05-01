@@ -1,4 +1,4 @@
-// Copyright 2021 yugecin - this source is licensed under GPL
+// Copyright 2021-2022 yugecin - this source is licensed under GPL
 // see the LICENSE file for more details
 package net.basdon.anna.internal;
 
@@ -32,6 +32,10 @@ RichMessage parse(char[] raw)
 {
 	StringBuilder rich = new StringBuilder(1024);
 	StringBuilder plain = new StringBuilder(512);
+
+	for (int i = 0; i < styles.length; i++) {
+		styles[i] = null;
+	}
 
 	rich.append("<html>");
 
